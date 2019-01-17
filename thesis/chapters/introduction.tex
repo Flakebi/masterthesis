@@ -1,0 +1,48 @@
+%\clearpage
+\bigsection{Introduction}
+In this section we motivate the introduction of new security mechanisms. Afterwards we list our contributions.
+
+\subsection{Motivation}
+\label{sub:motivation}
+Why do we want to have profile guided optimization for GPUs?
+
+In general, we try to execute code on processors as fast as possible. This saves time, energy and money or allows us to handle larger problems.
+
+Many optimizations are done only with statically analyzing code. The compiler cannot know though on which data the code will be executed. This means there are cases, in which the compiler has to guess which input is more likely. E.g. for branches, which branch is more likely taken and should be preferred when linearizing the control flow graph.
+
+Profiling on sample data and using the obtained data in the compiler enables more optimizations. In short, this is called PGO for Profile Guided Optimizations.
+
+\subsection{Optimizations}
+In the following, we list some possible optimizations and the needed data when the compiler has access to profiling data.
+
+\begin{enumerate}
+	\item Improve linearization
+	\paragraph{Needed data} Branch probabilities
+	\paragraph{Description} Pick the more probable branch first, etc.
+	\paragraph{Background} Already done for CPUs? Also without PGO with likely/unlikely in gcc, \dots in msvc, something in gpus?
+	\paragraph{Example} With code
+	
+	\item Skip branches
+	\paragraph{Needed data} Branch probabilities and distribution per wave
+	\paragraph{Description} Only insert the branch skip instruction (scalar processor) if often all or no thread take the branch. Otherwise do not insert it as both branches are executed anyway.
+	\paragraph{Background}
+	\paragraph{Example}
+	
+	\item Prefetch textures if they are likely needed
+	\paragraph{Needed data} Branch probabilities
+	\paragraph{Description} When a texture is loaded only if a condition evaluates to true, it speeds up if the load is executed before we actually need it. So the shader can do some work and then use the loaded texture value when it is available. We only do the prefetching if the texture is needed with a probability $> 0.5$, otherwise we will not prefetch it, so the shader has to wait.
+	\paragraph{Example}
+	
+	Or if the condition is actually available before, we can do a short branch before to prefetch the texture.
+	\paragraph{Background} Prefetching textures is already done (? citation needed), but without any supporting data that it makes sense to prefetch the texture.
+	\paragraph{Example}
+	
+	\item Introduce conditions if a specific variable value occurs regularly
+	\paragraph{Needed data} Variable value distribution
+	\paragraph{Description} If a variable often has the same value... Introduce branch and work with constant propagation. This increases the code size as parts of the code are duplicated but can speed up the shader if often only a small part of the original code is executed.
+	\paragraph{Background} Is there something? Maybe for CPUs?
+	\paragraph{Example} Blend multiple textures based on a material texture which most often contains a single 1 component.
+\end{enumerate}
+
+\subsection{Contributions}
+\label{sub:contributions}

@@ -1,0 +1,29 @@
+\newpage
+\vspace*{3.5cm}
+\begin{center}
+\begin{minipage}{12.5cm}
+\section*{Abstract}
+A lot of software that we use today is written in C and C++. Especially these memory unsafe languages induce vulnerabilities in applications. Therefore people developed techniques which make the exploitation of programming faults harder. The goal of this work is to fortify these techniques and introduce new methods to make programs more secure. We analyze the following techniques with regard to their security effect and their impact on performance:
+\begin{enumerate}
+	\item Checking the position of the stack pointer in every system call, which showed an overhead of \SI{2.7 \pm 3.3}{\percent} in a microbenchmark. The measured overhead shows a large standard error, thus we cannot be sure that our patch actually makes applications slower.
+	\item Adding random gaps between sequent \texttt{mmap} allocations, leading to a maximal speed loss of \SI{2.8 \pm 0.5}{\percent}.
+	\item Improving the \gls{ssp} by clearing the \gls{ssp} from the stack after checking it (no measureable performance change) and generating a random \gls{ssp} for every function call (\SI{265 \pm 4}{\percent} times slower in a microbenchmark, while more realistic workloads showed a regression of \SI{< 2}{\percent}).
+\end{enumerate}
+
+We created patches for the stack pointer check and the \gls{ssp} improvements. We consider the security, which is added by the discussed patches, useful enough and the performance overhead low enough, to make use of these techniques.
+
+%\pagenumbering{arabic}\setcounter{page}{1}
+%\begin{abstract}
+\end{minipage}
+\end{center}
+
+%\newpage
+%\vspace*{3.5cm}
+%\begin{center}
+%\begin{minipage}{12.5cm}
+
+%\section*{Abstrakt}
+
+%Abstrakt deutsch
+%\end{minipage}
+%\end{center}

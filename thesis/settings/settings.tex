@@ -1,0 +1,201 @@
+\textwidth15cm
+\textheight23cm
+\topmargin-1cm
+%\oddsidemargin0.5cm
+%\evensidemargin0.4cm
+\oddsidemargin1cm
+\evensidemargin0cm
+\setlength{\headheight}{13.6pt}
+%\frenchspacing
+
+%\clubpenalty10000
+%\widowpenalty10000
+%\displaywidowpenalty=10000
+
+%\sloppy
+%\hbadness 10000
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.75}
+\renewcommand{\UrlFont}{\small\ttfamily}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\definecolor{vsClass}{RGB}{0,110,150}
+\definecolor{vsType}{RGB}{0,0,255}
+\definecolor{vsString}{RGB}{215,160,135}
+\definecolor{vsComment}{RGB}{10,100,30}
+
+\definecolor{tumblue}{RGB}{0,101,189}
+
+\hypersetup{pdftitle={Master Thesis}, pdfauthor={Sebastian Neubauer}, pdfsubject={PGO on GPUs}}
+
+\addbibresource{references.bib}
+
+\crefname{lstlisting}{listing}{listings}
+\Crefname{lstlisting}{Listing}{Listings}
+
+\lstset{
+  numbers=left,                   % where to put the line-numbers
+  numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
+  stepnumber=1,
+  numbersep=5pt,                  % how far the line-numbers are from the code
+%  backgroundcolor=\color{gray!35},
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,
+  frame=single,                   % adds a frame around the code
+  rulecolor=\color{black},        % if not set, the frame-color may be changed
+  tabsize=4,                      % sets default tabsize to 4 spaces
+  captionpos=b,                   % sets the caption-position to bottom
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=false,
+  language=C,
+  keywordstyle=\bfseries\color{vsType},
+  commentstyle=\itshape\color{vsComment},
+  stringstyle=\color{vsString},
+  keywordstyle=[2]{\color{vsClass}},
+  escapechar=ß,
+  basicstyle=\scriptsize,
+  morekeywords={u32, __u32, __be32, __le32,
+		u16, __u16, __be16, __le16,
+		u8,  __u8,  __be8,  __le8,
+		size_t, ssize_t}
+}
+
+\lstdefinestyle{mysh}{
+  language   = {bash},
+  moredelim  = **[is][\color{OliveGreen}]{+}{+},
+  basicstyle = \scriptsize,
+}
+
+\newcommand\lsthl[1]{{\color{Cyan}#1}}
+
+% kirschju's masm lstlisting
+\lstdefinelanguage
+   [x86_64]{Assembler}
+   [x86masm]{Assembler}
+   {keywords={mov, call, ret, xor, rep, int, loop, push, syscall, pop,
+        cdqe, cqo, cmpsq, cmpxchg16b, jrcxz, lodsq, movsxd, sub, add,
+        vxorpd, popfq, pushfq, scasq, stosq, iretq, rdtscp, swapgs, shl, jz,
+        vmfunc, enter, leave},
+    keywords=[2]{rax, eax, ax, ah, al,
+           rdx, edx, dx, dh, dl,
+     rcx, ecx, cx, ch, cl,
+     rbx, ebx, bx, bh, bl,
+     rsi, esi, si, sih, sil,
+     rdi, edi, di, dih, dil,
+     rsp, esp, sp, rbp, ebp, bp, rip, eip, ip,
+                 r8, r8d, r8w, r8b, r9, r9d, r9w, r9b,
+           r10, r10d, r10w, r10b, r11, r11d, r11w, r11b,
+           r12, r12d, r12w, r12b, r13, r13d, r13w, r13b,
+           r14, r14d, r14w, r14b, r15, r15d, r15w, r15b},
+     keywords=[3]{db, section}
+   }
+
+\newcommand{\ftabwidth}{7cm}
+\newcommand{\ftabinnerwidth}{10cm}
+\newcommand{\thead}{\rowcolor{Dandelion}}
+\newcommand{\todd}{\rowcolor{Dandelion!50}}
+\newcommand{\teven}{\rowcolor{Dandelion!30}}
+\newcommand{\colorbitbox}[3]{%
+\rlap{\bitbox{#2}{\color{#1}\rule{\width}{\height}}}%
+\bitbox{#2}{#3}}
+
+\setlength{\unitlength}{18mm}
+\newcommand{\blob}{\textcolor{Gray}{\rule[-.2\unitlength]{2\unitlength}{.5\unitlength}}}
+
+\newcommand\rblob{\rightmark
+\begin{picture}(0,0)
+\put(1,-\value{section}){\blob}
+\end{picture}}
+
+\newcommand\lblob{%
+	\begin{picture}(0,0)
+	\put(-3,-\value{section}){\blob}
+	\end{picture}%
+\thepage}
+
+% Header and footline
+\clearpairofpagestyles
+\KOMAoptions{
+	headsepline=true,
+	footsepline=true,
+}
+\setkomafont{pageheadfoot}{\sffamily}
+
+\automark[section]{section}
+% Outer in twoside, right in oneside
+\ohead{\itshape \rblob}
+\ofoot{\pagemark}
+
+% Style for first section pages inherits default
+\newpairofpagestyles[scrheadings]{sectionheading}{
+	\KOMAoptions{headsepline=false}
+	\ohead{\rblob}
+}
+\newpairofpagestyles[scrheadings]{appendix}{
+	\ohead{\itshape Appendix}
+}
+
+% Reduce spacing before paragraph
+\RedeclareSectionCommands[
+	beforeskip=-1ex plus -1ex minus -0.2ex,
+	afterskip=-1em,% works as horizontal skip of 1em
+]{paragraph,subparagraph}
+
+\newcommand\bigsection[1]{
+  \newpage
+  %\cleardoublepage
+  \thispagestyle{sectionheading}
+  \vspace*{4cm}
+  \section{#1}
+  \vspace*{0.5cm}
+  \pagestyle{scrheadings}
+}
+
+\addtokomafont{section}{\Huge}
+\addtokomafont{subsection}{\Large}
+
+\newcommand{\opt}[2]{#1}%
+\newcommand{\de}[1]{}%
+\newcommand{\en}[1]{#1}%
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\makeglossaries{}
+
+\algblockdefx[If]{If}{EndIf}[0]{\textbf{if}}{}
+%Defines the alternative ending \Then to the \If command,
+%which in turn ends in \EndThen
+\algcblockdefx[Then]{If}{Then}{EndThen}{\textbf{then}}{\textbf{end if}}
+
+\DeclareSIUnit\request{R}
+\DeclareSIUnit\mips{MIPS}
+\DeclareSIUnit\crypt{C}
+\DeclareSIUnit\iteration{I}
+
+%% https://tex.stackexchange.com/questions/55068/is-there-a-tikz-equivalent-to-the-pstricks-ncbar-command
+\tikzset{
+	ncbar angle/.initial=90,
+	ncbar/.style={
+	to path=(\tikztostart)
+		-- ($(\tikztostart)!#1!\pgfkeysvalueof{/tikz/ncbar angle}:(\tikztotarget)$)
+		-- ($(\tikztotarget)!($(\tikztostart)!#1!\pgfkeysvalueof{/tikz/ncbar angle}:(\tikztotarget)$)!\pgfkeysvalueof{/tikz/ncbar angle}:(\tikztostart)$)
+		-- (\tikztotarget)
+	},
+	ncbar/.default=0.5cm,
+}
+
+\tikzset{square left brace/.style={ncbar=0.5cm}}
+\tikzset{square right brace/.style={ncbar=-0.5cm}}
+
+% https://tex.stackexchange.com/questions/75836/creating-a-seamless-xor-symbol-as-node
+\tikzset{XOR/.style={draw,circle,append after command={
+		[shorten >=\pgflinewidth, shorten <=\pgflinewidth,]
+		(\tikzlastnode.north) edge (\tikzlastnode.south)
+		(\tikzlastnode.east) edge (\tikzlastnode.west)
+		}
+	}
+}
