@@ -1,48 +1,75 @@
 %\clearpage
 \bigsection{Introduction}
-In this section we motivate the introduction of new security mechanisms. Afterwards we list our contributions.
+In this section we motivate the analysis of code running on the \gls{gpu} and why this analysis is needed for some optimizations and thus beneficial for the performance of \gls{gpu} programs. Afterwards we list our contributions.
 
 \subsection{Motivation}
 \label{sub:motivation}
+\Glspl{gpu} started as simple additional processors, able to draw polygons, but relying on the CPU for everything else. As the time proceeded, more parallelism was introduced and functionality was added to move more computations from the CPU to the GPU. GPUs became capable of drawing more complex images for games with light and shadows, though the functionality was still baked into the hardware and the CPU was responsible to put data into the \emph{fixed function pipeline} which then did its configurable but not programmable job.
+As more and more functionality was added to graphics processors, game developers got the possibility to write small programs (shaders) which are run on the GPU. Simultaneously, the hardware changed from a very limited set of hardware backed functions to a more general processor model. Nowadays, the computing power of GPUs stems from their large amount of general purpose arithmetical processing units which can be freely programmed.~\cite{McClanahan2010}
+
+Soon after the possibility to program GPUs with shaders came up, people started to use GPUs for other purposes than graphics. While this was not the primary purpose of shaders, there is now good support in APIs and libraries to use GPUs for many purposes. This usage of graphics processors is called \gls{gpgpu}. Today, the highly parallel computing power is used for games, high performance computing and even things like offloading computations in spreadsheets or databases.~\cite{Lillqvist2016, Meraji2015}
+
+In general, we try to execute code as fast as possible. This saves time, energy and money or allows us to handle larger problems. To achieve this goal, most of the code that we execute first runs through multiple stages of compilation and optimization. Depending on the used programming languages and tools the time when optimizations happen differ, e.g. C++ code is optimized ahead of the runtime, when compiling the code, while scripting languages like JavaScript or bytecode languages like Java and C# are optimized at runtime by the \gls{jit}. Code that is executed on a GPU is compiled ahead of the runtime. At runtime, the compiled code is sent to the GPU over the PCIe bus and executed.
+
+For ahead-of-time compiled programming languages, optimizations are generally based on static analyses of the code. For example constant propagation can be implemented by first analyzing the possible values of variables using a fixed point iteration on the \gls{cfg} and afterwards transforming the \gls{cfg} such that known variable values are used.~\cite{Seidl2010}
+
+Another example where a compiler can optimize code is done with the decision, where to place parts of the code in the resulting executable. It is beneficial for the performance if seldom executed instructions are put e.g. after the return statement. On an average execution, these instructions are not executed. If we would put them inside the other code, we would have to jump over them at some point. If we instead put them after the return statement, we can spare this one jump in the average case and are thus faster. The general process of deciding the order of code in the executable is called \emph{linearization}.
+
+There is a problem with this optimization though. The compiler often does not know which branch will be taken and which code is reached seldom, as this often depends on the concrete input into the application. The program gets this information at runtime, but at compile time this information is not yet known. \Glspl{jit} on the other hand are working at runtime, so they know which branches are hot and which cold. The knowledge of concrete input data enables them to output more efficient code than ahead-of-time compilers.
+
+There is a remedy for compiled languages though: What if we could provide sample input data to the compiler? The compiler then has access to the same information as the \gls{jit}, so he can make use of information, e.g. about hot branches, to generate more efficient code. Popular C and C++ compilers like clang and msvc implement this in the form of \gls{pgo}~\cite{ClangManual, MicrosoftPgo}.
+
+\lstinputlisting[language=bash, caption={Compiling a C++ program with \glsdesc{pgo} using clang.}, label={lst:compile-pgo}]{figures/compile-pgo.sh}
+
+An exemplary usage of \gls{pgo} can be seen in \cref{lst:compile-pgo}. The procedure consists of three different steps: At first, the program is compiled with static optimizations only and instrumentation instructions are inserted. As a second step, the compiled program is run on some sample input data. In this step, the instrumentation code collects useful information about the execution and usually creates a file containing this data. In the case of clang, this data has to be post-processed with the \texttt{llvm-profdata} executable. In the third and last step, the program is compiled again. This time, we provide the collected runtime/profiling information so the compiler can produce a better optimized version of our application.
+
+For clang there is also a second possibility available. Instead of using instrumentation to capture runtime information, we can also use some standard profiling tools like the Linux \texttt{perf} tool~\cite{LinuxPerf}. Profilers like \texttt{perf} generally incur a lower runtime overhead compared to instrumentation. The downside is that the resulting information is less detailed~\cite{ClangManual}.
+
 Why do we want to have profile guided optimization for GPUs?
 
-In general, we try to execute code on processors as fast as possible. This saves time, energy and money or allows us to handle larger problems.
-
-Many optimizations are done only with statically analyzing code. The compiler cannot know though on which data the code will be executed. This means there are cases, in which the compiler has to guess which input is more likely. E.g. for branches, which branch is more likely taken and should be preferred when linearizing the control flow graph.
-
 Profiling on sample data and using the obtained data in the compiler enables more optimizations. In short, this is called PGO for Profile Guided Optimizations.
+
+Explain a bit how \glspl{gpu} are structured, why branches are important.
 
 \subsection{Optimizations}
 In the following, we list some possible optimizations and the needed data when the compiler has access to profiling data.
 
-\begin{enumerate}
-	\item Improve linearization
-	\paragraph{Needed data} Branch probabilities
-	\paragraph{Description} Pick the more probable branch first, etc.
-	\paragraph{Background} Already done for CPUs? Also without PGO with likely/unlikely in gcc, \dots in msvc, something in gpus?
-	\paragraph{Example} With code
+\subsubsection{Improve linearization}
+\paragraph{Needed data} Branch probabilities
+\paragraph{Description} Pick the more probable branch first, etc.
+\paragraph{Background} Already done for CPUs? Also, without PGO with likely/unlikely in gcc, \dots in msvc, something in gpus?
+\paragraph{Example} With code
+
+\subsubsection{Skip branches}
+\paragraph{Needed data} Branch probabilities and distribution per wave
+\paragraph{Description} Only insert the branch skip instruction (scalar processor) if often all or no thread take the branch. Otherwise do not insert it as both branches are executed anyway.
+\paragraph{Background}
+\paragraph{Example}
 	
-	\item Skip branches
-	\paragraph{Needed data} Branch probabilities and distribution per wave
-	\paragraph{Description} Only insert the branch skip instruction (scalar processor) if often all or no thread take the branch. Otherwise do not insert it as both branches are executed anyway.
-	\paragraph{Background}
-	\paragraph{Example}
+\subsubsection{Decide prefetching of textures if they are loaded in branches}
+\paragraph{Needed data} Branch probabilities
+\paragraph{Description} Texture fetches that happen in branches are sometimes moved before the branch by the compiler -- so executed unconditionally. So the shader can do some work and then use the loaded texture value when it is available. This speeds up the execution if the branch condition evaluates to true. We only do the prefetching if the texture is needed with a probability $> 0.5$, otherwise we will not prefetch it.
+\paragraph{Example}
 	
-	\item Prefetch textures if they are likely needed
-	\paragraph{Needed data} Branch probabilities
-	\paragraph{Description} When a texture is loaded only if a condition evaluates to true, it speeds up if the load is executed before we actually need it. So the shader can do some work and then use the loaded texture value when it is available. We only do the prefetching if the texture is needed with a probability $> 0.5$, otherwise we will not prefetch it, so the shader has to wait.
-	\paragraph{Example}
+Or if the condition is actually available before, we can do a short branch before to prefetch the texture.
+\paragraph{Background} Prefetching textures is already done, but without any supporting data that it makes sense to prefetch the texture.
+\paragraph{Example}
 	
-	Or if the condition is actually available before, we can do a short branch before to prefetch the texture.
-	\paragraph{Background} Prefetching textures is already done (? citation needed), but without any supporting data that it makes sense to prefetch the texture.
-	\paragraph{Example}
+\subsubsection{Introduce conditions if a specific variable value occurs regularly}
+\paragraph{Needed data} Variable value distribution
+\paragraph{Description} If a variable often has the same value\dots Introduce branch and work with constant propagation. This increases the code size as parts of the code are duplicated but can speed up the shader if often only a small part of the original code is executed.
+\paragraph{Background} Is there something? Maybe for CPUs?
+\paragraph{Example} Blend multiple textures based on a material texture which most often contains a single 1 component.
 	
-	\item Introduce conditions if a specific variable value occurs regularly
-	\paragraph{Needed data} Variable value distribution
-	\paragraph{Description} If a variable often has the same value... Introduce branch and work with constant propagation. This increases the code size as parts of the code are duplicated but can speed up the shader if often only a small part of the original code is executed.
-	\paragraph{Background} Is there something? Maybe for CPUs?
-	\paragraph{Example} Blend multiple textures based on a material texture which most often contains a single 1 component.
-\end{enumerate}
+\subsubsection{Use the scalar processor to fetch memory if all SIMD-threads want to fetch the same address}
+\paragraph{Needed data} Address values per wave
+\paragraph{Description} If every SIMD-thread wants to fetch the same memory, the code can be optimized to fetch the address once by the scalar processor instead of the vector processors. This reduces the latency(?).
+\paragraph{Background}
+\paragraph{Example}
+
+\subsection{Notation}
+\label{sub:notation}
+Best notation for (SIMD-)threads, \glspl{cu}.
 
 \subsection{Contributions}
 \label{sub:contributions}

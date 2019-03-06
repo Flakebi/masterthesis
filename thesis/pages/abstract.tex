@@ -3,6 +3,20 @@
 \begin{center}
 \begin{minipage}{12.5cm}
 \section*{Abstract}
+GPUs are getting used for more and more diverse purposes: Games, High Performance Computing, even offloading computations in spreadsheets or databases.
+
+Something GPU optimization \dots compiler has to guess hot branches \dots on CPUs common to get data with profiling \dots many tools for GPU profiling on the kernel/shader level \dots get used memory bandwidth, etc.
+
+There is however a lot less tooling available to get instruction level data. E.g. how often a branch is executed.
+
+Plan: Get that data, feed it back into the compiler to get accurate data optimizations. Tl;dr get PGO on GPUs.
+
+This work focuses on profiling GPU kernels to generate the data which will later be needed for the optimizations.
+
+Actual results.
+
+Old:
+
 A lot of software that we use today is written in C and C++. Especially these memory unsafe languages induce vulnerabilities in applications. Therefore people developed techniques which make the exploitation of programming faults harder. The goal of this work is to fortify these techniques and introduce new methods to make programs more secure. We analyze the following techniques with regard to their security effect and their impact on performance:
 \begin{enumerate}
 	\item Checking the position of the stack pointer in every system call, which showed an overhead of \SI{2.7 \pm 3.3}{\percent} in a microbenchmark. The measured overhead shows a large standard error, thus we cannot be sure that our patch actually makes applications slower.
