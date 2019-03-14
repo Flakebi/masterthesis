@@ -1,3 +1,9 @@
+# 2019-03-11 – 2019-03-17
+- Read about llvm instruction scheduling and branch weights/probabilities to finally find linearization
+- Start with software part of GPUs
+- Improve optimization list
+- Improve introduction
+
 # 2019-03-04 – 2019-03-10
 - Search some literature
 - Start writing introduction
