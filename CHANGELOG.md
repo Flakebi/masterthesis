@@ -1,4 +1,7 @@
 # 2019-03-11 – 2019-03-17
+- Build amdvlk
+- Add section about branching
+- Add Nicolai’s corrections
 - Read about llvm instruction scheduling and branch weights/probabilities to finally find linearization
 - Start with software part of GPUs
 - Improve optimization list
