@@ -1,3 +1,8 @@
+# 2019-03-18 – 2019-03-24
+- Look at LLVM pgo infrastructure
+- Look at LLVM amdgpu infrastructure
+- Test amdvlk driver
+
 # 2019-03-11 – 2019-03-17
 - Build amdvlk
 - Add section about branching

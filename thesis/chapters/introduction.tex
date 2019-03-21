@@ -5,7 +5,7 @@ In this section we motivate the optimization of code running on the \gls{gpu} an
 \subsection{Motivation}
 \label{sub:motivation}
 \paragraph{History of GPUs} \Glspl{gpu} started as simple co-processors, able to draw polygons on a frame buffer, which is displayed on a screen, but relying on the \gls{cpu} for everything else. As time proceeded, more parallelism was introduced and functionality was added to move more computations from the CPU to the GPU. GPUs became capable of drawing more complex images for games with light and shadows, though the functionality was baked into the hardware and the CPU was responsible for putting data into the \emph{fixed function pipeline} which then did its configurable but not programmable job.
-As more and more functionality was added to graphics processors, game developers, among others, got the possibility to write small programs called shaders, which are run on the GPU. Simultaneously, the hardware changed from a very limited set of hardware backed functions to a more general processor model. Nowadays, the computing power of GPUs stems from their large amount of general purpose arithmetical processing units which can be freely programmed. Much of the functionality which was previously baked into the hardware is now implemented in software running on these general processors.~\cite{McClanahan2010}
+As more and more functionality was added to graphics processors, game developers -- among others -- got the possibility to write small programs called shaders, which are run on the GPU. Simultaneously, the hardware changed from a very limited set of hardware backed functions to a more general processor model. Nowadays, the computing power of GPUs stems from their large amount of general purpose arithmetical processing units which can be freely programmed. Much of the functionality which was previously baked into the hardware is now implemented in software running on these general processors.~\cite{McClanahan2010}
 
 Soon after the possibility to program GPUs with shaders came up, people started to use them for other purposes than graphics. While this was not the primary purpose of shaders, there is now good support in APIs and libraries to use GPUs for many purposes. This usage of graphics processors is called \gls{gpgpu}. Today, the highly parallel computing power is used for games, high performance computing and even things like offloading computations from spreadsheets or databases.~\cite{Lillqvist2016, Meraji2015}
 
@@ -60,9 +60,8 @@ As emphasized before, having divergent control flow is not simply possible for p
 
 \paragraph{Software} This section explains how code is run on GPUs. Developers, which write code for GPUs, do not communicate directly with the hardware but through software which abstracts from the concrete underlying hardware. For CPUs this would be the operating system, which initializes the processors when starting and handles the resource allocations of processes. For GPUs, this part is done by the driver.
 
-Similar to different operating systems and standards like POSIX and the windows \gls{api}, there exist different interfaces to communicate with graphic drivers. Two open standards, which are implemented by different vendors, are OpenGL and Vulkan. A specialty in comparison to CPUs is that the compiler is integrated into the driver in many APIs.
+Similar to different operating systems and standards like POSIX and the windows \gls{api}, there exist different interfaces to communicate with graphic drivers. Two open standards, which are implemented by multiple vendors, are OpenGL and Vulkan. A specialty in comparison to CPUs is that the compiler is integrated into the driver in many APIs.
 
-TODO
 % TODO More content
 
 \subsection{Optimizations}
