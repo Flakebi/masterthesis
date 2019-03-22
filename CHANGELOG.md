@@ -1,4 +1,6 @@
 # 2019-03-18 – 2019-03-24
+- Successfully enable PGO when compiling (though it obviously crashes when running)
+- Non-working driver issue: Find linker error
 - Look at LLVM pgo infrastructure
 - Look at LLVM amdgpu infrastructure
 - Test amdvlk driver
