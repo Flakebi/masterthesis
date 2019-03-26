@@ -1,4 +1,10 @@
+# 2019-03-25 – 2019-03-31
+- Fix sh_link in PAL
+- Read ELF code in PAL
+- Write about LLVM instrumentation for counting basic block executions
+
 # 2019-03-18 – 2019-03-24
+- Write software part of introduction
 - Successfully enable PGO when compiling (though it obviously crashes when running)
 - Non-working driver issue: Find linker error
 - Look at LLVM pgo infrastructure
