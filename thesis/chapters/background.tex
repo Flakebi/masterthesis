@@ -1,7 +1,7 @@
 \clearpage
 \bigsection{Background}
-The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM like the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports profiling by either a sampling profiler or instrumentation.
+The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM like the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler or instrumentation. We will concentrate on the instrumentating profiler in the following.
 
-One of the instrumentations inserts code which counts how often each basic block is executed. The simplest version would be to insert one counter at each block. However, if there are two branches, e.g. from an if-else-block and we know the total amount of executions of this whole construct, we only need one counter. We can count the executions of the if-part and can substract that from the total amount to get the counter for the else-part.
+One of the instrumentations inserts code to count how often each basic block is executed. The simplest version of such an instrumentation would insert one counter at each block. Let us consider an example with an if-else-block. The instrumentation would insert four counters: Before the branching, in the if-block, in the else-block and after the branching in the following block. However, we can get the same information with only two counters. We can count the executions of the if-part and the total executions either in the beginning or in the end. To get the counter of the else-part we subtract the if-part counter from the total amount.
 
 In 1973, \citet{Knuth1973} showed and proofed an algorithm to find a minimal set of blocks where we need to insert counters. This algorithm is used in LLVM.

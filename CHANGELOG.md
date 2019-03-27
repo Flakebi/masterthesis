@@ -1,4 +1,6 @@
 # 2019-03-25 – 2019-03-31
+- Correct introduction again
+- Start reading more PAL code
 - Fix sh_link in PAL
 - Read ELF code in PAL
 - Write about LLVM instrumentation for counting basic block executions
