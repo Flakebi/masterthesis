@@ -1,3 +1,11 @@
+# 2019-04-08 – 2019-04-14
+- Use atomic counters and reduce to 32 bit (not completely working)
+- Read ISA
+- Print shader data segment
+- Read more PAL code
+
+### 2019-04-01 – 2019-04-07
+
 # 2019-03-25 – 2019-03-31
 - Correct introduction again
 - Start reading more PAL code
