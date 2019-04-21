@@ -1,4 +1,5 @@
 # 2019-04-15 – 2019-04-21
+- Add notes to implementation part of the thesis
 - DotA performance test: RADV: 120-130 fps, AMDVLK: 120 fps, AMDVLK (with PGO): 10 fps
 - Relocations work, getting PGO counters
 - Load more sections (without relocations)
