@@ -1,3 +1,9 @@
+# 2019-04-22 – 2019-04-28
+- Upstream order independent section loading in PAL
+- Add some text about ELF to the background
+- Link PGO runtime library into PAL
+- Look at how LLVM writes out PGO data
+
 # 2019-04-15 – 2019-04-21
 - Add notes to implementation part of the thesis
 - DotA performance test: RADV: 120-130 fps, AMDVLK: 120 fps, AMDVLK (with PGO): 10 fps

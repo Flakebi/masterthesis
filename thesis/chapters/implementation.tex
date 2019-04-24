@@ -17,6 +17,7 @@ When compiling with PGO instrumentation on the x64\_86 architecture, the compile
 The ELF loader reads this information and loads the segments at a random offset but with a known relative position.
 Relocations are only needed to resolve addresses between different dynamic objects.
 
+% TODO Now partially in background
 In theory, this could work in the same way on GPUs. However, PAL does not support allocating memory at fixed addresses at the moment and introducing this feature would touch many parts of PAL. For this reason we decided to instead skip the compile-time linking step -- which is not done for shaders anyway at the moment -- and use the relocations to resolve all references between ELF sections.
 The steps for relocations are:
 \begin{enumerate}

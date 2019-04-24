@@ -1,6 +1,6 @@
 \clearpage
 \bigsection{Background}
-This section contains introductions into the hard- and software of graphics processors. Further we explain concepts that are needed for the implementation, like the ELF format.
+This section contains introductions into the hard- and software of graphics processors. Further we explain concepts that are used in the implementation, like the ELF format.
 
 \subsection{Graphics Processing Unit}
 To understand how profiling data can -- and cannot -- be collected on GPUs, we need a basic understanding of how code is run on graphics processors. This section gives a short explanation of the underlying hardware and in which points it differs from CPUs.
@@ -52,20 +52,32 @@ The compilation is done now, the next steps are loading and executing the code.
 
 \subsection{PGO in LLVM}
 \label{sub:pgo-background}
-The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM like the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler or instrumentation. We will concentrate on the instrumenting profiler in the following.
+The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM, e.g. the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler and instrumentation. We will concentrate on the instrumenting profiler in the following.
 
 \subsection{Basic Block Counting}
 \label{sub:counter-instrumentation}
-One of the instrumentations inserts code to count how often each basic block is executed. The simplest version of such an instrumentation would insert one counter at each block. Let us consider an example with an if-else-block. The instrumentation would insert four counters: Before the branching, in the if-block, in the else-block and after the branching in the following block. However, we can get the same information with only two counters. We can count the executions of the if-part and the total executions either in the beginning or in the end. To get the counter of the else-part we subtract the if-part counter from the total amount.
+One information we would like to collect through profiling is how often each basic block is executed. The simplest version of such an instrumentation would insert one counter at each basic block.
+Let us consider an example with an if-else-statement. The instrumentation would insert four counters: Before the branching, in the if-block, in the else-block and after the branching in the following block. However, we can get the same information with only two counters. We can count the executions of the if-part and the total executions either in the beginning or in the end. To get the counter of the else-part we subtract the if-part counter from the total amount.
 
-In 1973, \citet{Knuth1973} showed and proofed an algorithm to find a minimal set of blocks where we need to insert counters. This algorithm is used in LLVM.
+In 1973, \citet{Knuth1973} showed and proofed an algorithm to find a minimal set of blocks where we need to insert counters. This algorithm is implemented in the instrumentation of LLVM.
 
 \subsection{The Executable and Linkable Format}
 \label{sub:elf}
+The \glsdesc{elf} (ELF) is a file format used for programs, libraries object files and coredumps. It is used mainly on Unix systems and is the main format for executables on Linux.
+In the AMD Vulkan driver, LLVM outputs an ELF object file. This ELF object is then passed to PAL, uploaded to the GPU and executed. Some parts of the ELF are interesting to us so this section provides a summary about their structure and functionality.
+
+An ELF object file is divided into sections. The \texttt{.text} section for example contains the code or program text. The \texttt{.data} and \texttt{.rodata} sections contain writable and read-only data that will be available to the program at runtime. There are also sections which contain meta information for the loader. The loader is the application which loads the ELF file, in AMDVLK this is a part of PAL.
+
 % TODO
-The \gls{elf} is a file format used mainly on various Unix systems. On Linux, programs, libraries and also object files created by compilers are encoded in \gls{elf}.
+An essential part of the meta information are the symbols. A symbol associates a name with a certain region in another segment. E.g. exported functions from libraries are marked with a symbol so the ELF loader can link libraries and the main executable.
 
-High-level overview of relocations~\cite{BenderskyRelocations}
-\texttt{sh\_link} specifies symbol section, \texttt{sh\_info} the section to apply the relocations to. The \texttt{sh} means \emph{Section Header}.
+\paragraph{Relocations} Another use of symbols are relocations. When compiling code into an object file, the compiler does not yet know at which address the \texttt{.text} and \texttt{.data} sections will be placed. However, the code can contain references to the data section for reading and writing static variables so the compiler needs to output instructions that use addresses in other sections. This is where relocation sections come in. E.g. for a variable access, the compiler uses zeroes as  placeholders for the address and writes it into the \texttt{.text} section. Then the compiler adds a relocation entry that instructs the loader to fill out the address in the \texttt{.text} section at runtime, when it is known.
+Each relocation section connects one symbol section with the section where the loader should fill out the addresses, in our example the \texttt{.text} section. The relocation section references the symbol section in its \texttt{sh\_link} field -- where \texttt{sh} stands for section header -- and the target (\texttt{.text}) section in the \texttt{sh\_info}. Each relocation entry describes which symbol to use, where to write it and how to compute the final address value. The different ways to compute addresses are encoded in the type field and are dependent on the hardware architecture. Two different types that are found for many architectures are absolute and relative relocations. An absolute relocation simply writes the address of a symbol (plus an optional offset). A relative relocation subtracts the target address (where the loader writes the result) before writing the resolved address. This is used for relative addressing, where the code usually loads the instruction pointer and adds a constant.~\cite{BenderskyRelocations}
 
-The modern way is \gls{pic} because it allows sharing library code between processes in memory~\cite{BenderskyPic}. Advantages of PIC are currently not relevant for GPUs as there are no shared libraries that have to be linked. But it takes one more dereference.
+After the compiler emits object files, the linker merges multiple object files into an executable. It merges similar sections into \emph{segments} (also called \emph{program headers} in ELF). At runtime, the segments of one library are loaded at a random offset address but with a fixed distance between each other. This means the linker knows the relative distance between two addresses in the code (and data) and is able to resolve all relative relocations that refer to a symbol in the same ELF object. Of course, it cannot resolve relative relocations to other libraries as their distance is not fixed.
+% TODO
+This could work in the same way on GPUs. However, PAL does not support allocating memory at fixed addresses at the moment and it does not perform relocations.
+
+\paragraph{PIC} While relocations are still in use today, the plain use of relocations has several disadvantages. As the loader changes the content of the code section, we cannot share these sections between multiple programs or even multiple instances of the same program because the addresses are different each time. Another disadvantage is that the loader has to go through all usages of every relocated variable and function which can cause a long loading time for programs. The solution is to write all addresses that have to be linked into one section and only once. This section is called \gls{got}. When the address of a linked variable is needed, its address loaded from the \gls{got} and dereferenced. Functions are called similarly. This \gls{pic} approach enables sharing the code sections between processes because only the \gls{got} is different. A disadvantage is that two dereferences are needed compared to only one with plain relocations.~\cite{BenderskyPic}
+
+Today, \gls{pic} is the standard technique for libraries on Linux. For GPUs, the advantages of PIC are currently not relevant as there are no shared libraries that have to be linked so no code is shared between processes. On the other hand, the disadvantage of an additional dereference is relevant so currently it is not advantageous to use PIC on GPUs.
