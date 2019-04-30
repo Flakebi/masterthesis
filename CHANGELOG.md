@@ -1,4 +1,8 @@
+# 2019-04-29 – 2019-05-05
+- Learn profile data format: CounterPtr inside data section is GPU address (relocation), in profraw header is CPU address (section start)
+
 # 2019-04-22 – 2019-04-28
+- Writing some profile data works but creates invalid files
 - Upstream order independent section loading in PAL
 - Add some text about ELF to the background
 - Link PGO runtime library into PAL
