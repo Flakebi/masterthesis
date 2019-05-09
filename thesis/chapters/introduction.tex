@@ -79,6 +79,7 @@ jmp endif
 \end{lstlisting}
 \end{minipage}
 
+% TODO
 \subsubsection{Skip branches}
 \paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
 \paragraph{Description} Only insert the branch skip instruction for the scalar unit if often all or no thread take the branch. Otherwise, do not insert it as both branches are executed anyway.
@@ -99,6 +100,7 @@ jmp endif
 % Throw away transparent blocks on textures?
 
 \subsubsection{Detect Uniform Computations}
+% TODO Reference paper from Nicolai
 \paragraph{Needed data} Variable value distribution on a SIMD unit
 \paragraph{Description} If we do a computation or memory fetch on the same value for every lane on a SIMD unit, i.e. it is uniform, the code can be optimized to be executed only once by the scalar unit instead of the vector unit.
 \paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution.

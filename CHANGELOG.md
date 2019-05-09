@@ -1,4 +1,17 @@
+# 2019-05-06 – 2019-05-12
+- Was a problem of bfd, works with gold
+- PGO does not work in release mode: IR flag is not set
+- Disabling ControlHeightReduction works for DotA
+- Narrowed down to ControlHeightReduction pass in LLVM
+- Manually patch code, problem seem to be multiple exp instructions
+- Narrow down to pixel shader by replacing code
+- Find rogue pipeline with binary search
+- Try to play DotA with PGO – crashes
+- Create script to convert profraw to profdata files
+- Fix bug allowing only one file to be written
+
 # 2019-04-29 – 2019-05-05
+- Improve PAL, not hardcoding single code and data sections
 - Passing PGO data to LLVM works but is in the wrong format
 - Set filename from environment variable and include pipeline id
 - Fix written profiling data
