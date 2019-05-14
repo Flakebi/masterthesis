@@ -1,0 +1,25 @@
+\scalebox{0.8}{
+\begin{tikzpicture}
+	\tikzstyle{simdbox}=[minimum height = 2cm, minimum width = 0.75cm,right=10mm, rectangle, draw=black, fill=color0]
+
+	\foreach \x in {0,...,3}{
+		\node[simdbox, label={[yshift=0.2cm]center:\tiny 16x}] (lanes\x) at (0.75cm * \x, -0.5cm * \x) {};
+	}
+
+	\foreach \x in {0,...,3}{
+		\node[simdbox, dotted, fill=color0!30!white, label={[yshift=0.2cm]center:\tiny 16x}] (lanes2\x) at (0.75cm * \x, -2cm - 0.5cm * \x) {};
+	}
+
+	\node[right=10mm] (description) at (0cm, 1.7cm) {\Large 64 \emph{virtual} lanes};
+	\node[right=10mm] (cycle-description) at (-1.5cm, 1.5cm) {Cycle};
+
+	\foreach \x in {0,...,11}{
+		\node[] (cycle\x) at (0.5cm, 1cm - 0.5cm * \x) {\x};
+		\draw[dashed, opacity=0.5] (cycle\x) -- ++(3.75cm, 0cm);
+	}
+
+	\draw[->] (0.8cm, 1cm) -- ++(0cm, -0.25cm - 11 * 0.5cm);
+\end{tikzpicture}
+}
+\captionof{figure}{Executing instructions on a SIMD unit with pipelining}
+\label{fig:gpu-simd-pipeline}

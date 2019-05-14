@@ -1,0 +1,44 @@
+\begin{figure}
+\begin{center}
+\scalebox{0.8}{
+\begin{tikzpicture}
+	\tikzstyle{simdbox}=[minimum height = 1cm, minimum width = 0.6cm,right=10mm, rectangle, draw=black, fill=color0]
+	\tikzstyle{scalarbox}=[simdbox, minimum width = 0.2cm]
+	\tikzstyle{boundingbox}=[draw=black, thick, rounded corners, inner sep=0.2cm]
+
+	\node[right=10mm] (sched-label) at (0.5cm, 2.5cm) {Scheduler};
+	\node[simdbox, minimum height=0.25cm] (sched0) at (1cm, 2cm) {};
+	\node[simdbox, dotted, minimum height=0.25cm, fill=color0!30!white, scope fading=south]
+		(sched1) at (1cm, 1cm) {};
+
+	\node[right=10mm] (mark0) at (-1cm, 2.5cm) {};
+	\node (mark1) at (4.3cm, 2.5cm) {};
+	\node[boundingbox, fit=(sched1)(sched-label)(mark0)(mark1)] (sched) {};
+
+	\node[right=10mm] (scalar-label) at (-1cm, 0cm) {Scalar};
+	\node[scalarbox] (scalar0) at (-1cm, -1cm) {};
+	\node[scalarbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.5cm] (scalar1) at (-1cm, -1.75cm) {};
+	\node[right=10mm] (mark2) at (-1cm, -2.15cm) {};
+	\node[boundingbox, fit=(scalar0)(scalar1)(mark2)(scalar-label)] (scalar) {};
+
+	\node[right=10mm] (simd-label) at (1.5cm, 0cm) {SIMD};
+	\foreach \x in {0,...,3}{
+		\node[simdbox] (lanes\x) at (1cm + 0.6cm * \x, -1cm - 0.25cm * \x) {\tiny 16};
+	}
+
+	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.5cm]
+		(lanes0-2) at (1cm + 0.6cm * 0, -1.75cm - 0.25cm * 0) {};
+	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.5cm]
+		(lanes1-2) at (1cm + 0.6cm * 1, -1.75cm - 0.25cm * 1) {};
+	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.25cm]
+		(lanes2-2) at (1cm + 0.6cm * 2, -1.625cm - 0.25cm * 2) {};
+
+	\node (mark3) at (4.3cm, -2.15cm) {};
+	\node[boundingbox, fit=(lanes0)(lanes3)(mark3)(simd-label)] (simd) {};
+
+\end{tikzpicture}
+}
+\end{center}
+\caption{Adding a scalar unit and an instruction scheduler}
+\label{fig:gpu-scalar-single}
+\end{figure}

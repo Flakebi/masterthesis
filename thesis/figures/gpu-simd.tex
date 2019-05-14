@@ -1,0 +1,25 @@
+%\resizebox{!}{\textheight}{
+\begin{tikzpicture}
+	\tikzstyle{simdbox}=[minimum height = 2cm, minimum width = 0.5cm,right=10mm, rectangle, draw=black, fill=color0]
+
+	\node[simdbox] (lane0) at (0.5cm * 0, 0cm) {};
+	\node[simdbox] (lane1) at (0.5cm * 1, 0cm) {};
+	\node[right=10mm] (lanespace) at (0.5cm * 2, 0.2cm) {\dots};
+	\node[simdbox] (lane15) at (0.5cm * 3, 0cm) {};
+
+	\node[right=10mm] (description) at (0cm, 1.7cm) {\Large 16 lanes};
+	\node[right=10mm] (cycle-description) at (-1.5cm, 1.5cm) {Cycle};
+
+	%\foreach \x in {0,...,15}{
+		%\node[simdbox] (lane\x) at (0.5cm * \x,0cm) {};
+	%}
+	\foreach \x in {0,...,4}{
+		\node[] (cycle\x) at (0.5cm, 1cm - 0.5cm * \x) {\x};
+		\draw[dashed, opacity=0.5] (cycle\x) -- ++(2.75cm, 0cm);
+	}
+
+	\draw[->] (0.8cm, 1cm) -- ++(0cm, -0.25cm - 4 * 0.5cm);
+\end{tikzpicture}
+%}
+\captionof{figure}{Executing an instruction on a SIMD unit}
+\label{fig:gpu-simd}

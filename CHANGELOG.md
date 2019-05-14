@@ -1,4 +1,9 @@
+# 2019-05-13 – 2019-05-19
+- Add figures to GPU background
+- Try to (ab)use llpcSpirvLowerGlobalPass to merge export instructions
+
 # 2019-05-06 – 2019-05-12
+- VulkanSponza is (subjectively) 0.5 fps slower with modified SSAO shader and PGO
 - Was a problem of bfd, works with gold
 - PGO does not work in release mode: IR flag is not set
 - Disabling ControlHeightReduction works for DotA
