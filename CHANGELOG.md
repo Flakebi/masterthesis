@@ -1,4 +1,6 @@
 # 2019-05-13 – 2019-05-19
+- Dota is (subjectively) 10 fps slower with PGO
+- Create pass to merge export instructions
 - Add figures to GPU background
 - Try to (ab)use llpcSpirvLowerGlobalPass to merge export instructions
 
@@ -6,12 +8,12 @@
 - VulkanSponza is (subjectively) 0.5 fps slower with modified SSAO shader and PGO
 - Was a problem of bfd, works with gold
 - PGO does not work in release mode: IR flag is not set
-- Disabling ControlHeightReduction works for DotA
+- Disabling ControlHeightReduction works for Dota
 - Narrowed down to ControlHeightReduction pass in LLVM
 - Manually patch code, problem seem to be multiple exp instructions
 - Narrow down to pixel shader by replacing code
 - Find rogue pipeline with binary search
-- Try to play DotA with PGO – crashes
+- Try to play Dota with PGO – crashes
 - Create script to convert profraw to profdata files
 - Fix bug allowing only one file to be written
 
@@ -31,7 +33,7 @@
 
 # 2019-04-15 – 2019-04-21
 - Add notes to implementation part of the thesis
-- DotA performance test: RADV: 120-130 fps, AMDVLK: 120 fps, AMDVLK (with PGO): 10 fps
+- Dota performance test: RADV: 120-130 fps, AMDVLK: 120 fps, AMDVLK (with PGO): 10 fps
 - Relocations work, getting PGO counters
 - Load more sections (without relocations)
 - Start with relocation code
