@@ -1,4 +1,13 @@
+# 2019-05-20 – 2019-05-26
+- Dota is (subjectively) 5–10 fps faster with PGO, changes are mostly basic block ordering
+- VulkanSponza is (subjectively) 0.5 fps faster with modified SSAO shader and PGO
+- Try to apply PGO intrumentation and usage after StructurizeCFG pass but function hashes do not match
+- Shader differenzes for VulkanSponza with/without PGO: None, except text.hot/text.unlikely section
+- Dota hase the same 58 fps with PGO as without and with RADV
+- Mark export instruction as convergent and don’t apply ControlHeightReduction
+
 # 2019-05-13 – 2019-05-19
+- Get Radeon GPU Profiler to start, needs libncurses from Ubuntu 18.04
 - Dota is (subjectively) 10 fps slower with PGO
 - Create pass to merge export instructions
 - Add figures to GPU background
