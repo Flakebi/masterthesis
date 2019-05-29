@@ -1,9 +1,19 @@
+# 2019-05-27 – 2019-06-02
+- Scripted Dota benchmark, needs 6:48, 96 fps without PGO, 97.5 with PGO
+- Problems
+	- RGP always claims things are CPU limited, but it makes things run slower itself
+	- Dota runs slow until reboot (again)
+	- Dota demos have less fps (96) than real game (120)
+- Run RGP, renderdoc, their integration is not working
+- More Dota benchmarks, also with custom scene: 98 fps without PGO, 95 with PGO
+
 # 2019-05-20 – 2019-05-26
+- Benchmark Dota, no change in performance with PGO on the phoronix example
 - Dota is (subjectively) 5–10 fps faster with PGO, changes are mostly basic block ordering
 - VulkanSponza is (subjectively) 0.5 fps faster with modified SSAO shader and PGO
 - Try to apply PGO intrumentation and usage after StructurizeCFG pass but function hashes do not match
 - Shader differenzes for VulkanSponza with/without PGO: None, except text.hot/text.unlikely section
-- Dota hase the same 58 fps with PGO as without and with RADV
+- Dota has the same 58 fps with PGO as without and with RADV
 - Mark export instruction as convergent and don’t apply ControlHeightReduction
 
 # 2019-05-13 – 2019-05-19
