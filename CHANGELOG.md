@@ -1,4 +1,6 @@
 # 2019-06-03 – 2019-06-09
+- Create script to parse Ashes of the Singularity output files
+- More Dota benchmarks
 
 # 2019-05-27 – 2019-06-02
 - OCAT runs on Windows only

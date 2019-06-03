@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v7.2.0-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>Dota</Title>
+    <LastModified>2019-06-03 00:00:00</LastModified>
+    <TestClient>Phoronix Test Suite v7.2.0 (Trysil)</TestClient>
+    <Description>Intel Core i7-5820K testing with a MSI X99S SLI PLUS (MS-7885) v1.0 and Gigabyte NVIDIA GeForce GTX 750 1024MB on Arch rolling via the Phoronix Test Suite.</Description>
+  </Generated>
+  <Result>
+    <Identifier>dota/pts</Identifier>
+    <Title>PTS Test Scene</Title>
+    <AppVersion>1.0</AppVersion>
+    <Description>pts</Description>
+    <Scale>Frames Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>normal</Identifier>
+        <Value>45.40</Value>
+        <RawString>45.6:45.6:45.6:44.8</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>pgo</Identifier>
+        <Value>45.70</Value>
+        <RawString>45.7:45.6:45.8:45.7</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>normal first time</Identifier>
+        <Value>40.6</Value>
+        <RawString>40.6</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>pgo first time</Identifier>
+        <Value>40.7</Value>
+        <RawString>40.7</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>pgo instrumentation</Identifier>
+        <Value>36.2</Value>
+        <RawString>36.2</RawString>
+      </Entry>
+    </Data>
+  </Result>
+
+  <Result>
+    <Identifier>dota/own</Identifier>
+    <Title>Own Test Scene</Title>
+    <AppVersion>1.0</AppVersion>
+    <Description>own</Description>
+    <Scale>Frames Per Second</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>normal</Identifier>
+        <Value>51.25</Value>
+        <RawString>51.2:51.3:51.3:51.2</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>pgo</Identifier>
+        <Value>51.15</Value>
+        <RawString>51.1:51.2:51.251.1:</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>normal first time</Identifier>
+        <Value>50.9</Value>
+        <RawString>50.9</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>pgo first time</Identifier>
+        <Value>50.8</Value>
+        <RawString>50.8</RawString>
+      </Entry>
+      <Entry>
+        <Identifier>pgo instrumentation</Identifier>
+        <Value>44.5</Value>
+        <RawString>44.5</RawString>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>
