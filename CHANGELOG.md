@@ -1,4 +1,13 @@
+# 2019-06-03 – 2019-06-09
+
 # 2019-05-27 – 2019-06-02
+- OCAT runs on Windows only
+- Steam claims negative fps, Ashes writes result to /mnt/bigdata/Dateien/Programme/Steam/steamapps/compatdata/507490/pfx/drive_c/users/steamuser/My Documents/My Games/Ashes of the Singularity - Escalation
+- Start Ashes of the Singularity with proton from command line
+- vkmark: No difference in pipelines
+- Ask about VComputeBench
+- 5 runs Dota benchmark: 11:54, everywhere 51.1 fps (89.7 for lower graphic settings)
+- Increment counters only once per wave, increases fps while instrumenting to 35 in benchmark
 - Scripted Dota benchmark, needs 6:48, 96 fps without PGO, 97.5 with PGO
 - Problems
 	- RGP always claims things are CPU limited, but it makes things run slower itself
