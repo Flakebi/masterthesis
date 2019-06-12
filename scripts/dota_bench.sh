@@ -27,7 +27,7 @@ env AMDVLK_PROFILE_INSTR_GEN="$PGO_FOLDER/Pipeline_%i_%m.profraw" SDL_VIDEODRIVE
 cd "$PGO_FOLDER"
 echo
 echo Converting PGO data
-/home/sebi/Masterarbeit/repo/pgo-example/convert_pipelines.sh
+/home/sebi/Masterarbeit/repo/scripts/convert_pipelines.sh
 cd -
 
 rm -r /mnt/bigdata/Dateien/Programme/Steam/steamapps/common/dota\ 2\ beta/game/dota/shadercache

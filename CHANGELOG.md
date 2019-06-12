@@ -1,4 +1,18 @@
+# 2019-06-10 – 2019-06-16
+- Using wave, normal instrumentation changed 1 shader in Dota (and linearization), wave-late changed more
+- init_exec intrinsic does not work for some reason
+- Write a script to automate things
+- Cleanup code and introduce runtime options
+- Plan finding uniform values
+- Try to use gpuvis, overrides LD_LIBRARY_PATH and other things
+
 # 2019-06-03 – 2019-06-09
+- Create PGO analysis pass to find 0-counts
+- LTTng: Can trace things, but how can it trace frames?
+- Install games
+- gpuvis: Supports Tracing a few frames but not continuously
+- Benchmark Ashes
+- Ashes never destroys pipelines → implement dumping every 10 seconds
 - Create script to parse Ashes of the Singularity output files
 - More Dota benchmarks
 
