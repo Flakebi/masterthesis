@@ -1,4 +1,8 @@
+# 2019-06-17 – 2019-06-22
+- Prepare presentation
+
 # 2019-06-10 – 2019-06-16
+- Start preparing presentation
 - Use bb-counters for new "function" to count uniforms
 - Per wave, normal instrumentation is wrong because of optimizations after setting the exec register, late instrumentation looks fine
 - Using wave, normal instrumentation changed 1 shader in Dota (and linearization), wave-late changed more

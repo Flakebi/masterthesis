@@ -1,0 +1,38 @@
+\begin{center}
+\begin{tikzpicture}
+	\visible<-4>{
+		\draw[->] (0cm, 0cm) -- (8.3cm, 0cm);
+	}
+	\foreach \x in {0,...,4}{
+		\draw (\x * 2cm, 0.1cm) -- (\x * 2cm, -0.1cm);
+	}
+
+	\node[align=center] at (1cm, 0.5cm) {compile\\shader};
+	\node[align=center] at (3cm, 0.5cm) {run\\demo};
+	\node[align=center] at (5cm, 0.5cm) {compile\\again};
+	\node[align=center] at (7cm, 0.5cm) {run\\application};
+
+	\node[align=center, text=secondary] at (3cm, -0.7cm) {\footnotesize aggregate\\\footnotesize data};
+	\node[align=center, text=secondary] at (5cm, -0.7cm) {\footnotesize use\\\footnotesize data};
+
+	\visible<2->{
+		\node[align=center, rotate=-30, text=color2] at (8.5cm, 1.5cm) {\footnotesize hopefully\\\footnotesize faster!};
+	}
+
+	\visible<3>{
+		\node[align=center, text=color2] at (1cm, 2cm) {exists};
+		\node[align=center, text=color2] at (7cm, 2cm) {exists};
+		\node[align=center, text=highlight] at (4cm, -2cm) {does not exists};
+	}
+
+	\visible<4>{
+		\node[align=center, draw=black, thick, minimum width=1.8cm, minimum height=1cm] at (3cm, -0.7cm) {};
+		\node[align=center, text=highlight] at (3cm, -1.5cm) {my topic};
+	}
+
+	\visible<5>{
+		\node[align=center] at (4cm, 2cm) {🎉 \alert{everything works} \tiny except being faster};
+		\draw[->, color=highlight, thick] (0cm, 0cm) -- (8.3cm, 0cm);
+	}
+\end{tikzpicture}
+\end{center}

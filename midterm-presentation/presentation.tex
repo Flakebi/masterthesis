@@ -1,0 +1,190 @@
+\documentclass[xcolor={usenames,dvipsnames}, aspectratio=169, 12pt]{beamer}
+\usetheme{tum}
+
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{emojione}
+\usepackage{wasysym}
+\usepackage{calc}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc, arrows.meta}
+\usepackage{listings}
+\usepackage{siunitx}
+\usepackage{svg}
+
+\input{settings.tex}
+
+\lstset{
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	stepnumber=1,
+	numbersep=5pt,
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+	frame=single,
+	rulecolor=\color{black},
+	tabsize=4,
+	captionpos=b,
+	breaklines=true,
+	breakatwhitespace=false,
+	language=C,
+	commentstyle=\itshape\color{Mahogany},
+	stringstyle=\color{BrickRed},
+	keywordstyle=\bfseries\color{OliveGreen},
+	keywordstyle=[2]{\color{MidnightBlue}},
+	keywordstyle=[3]{\color{RoyalPurple}},
+	escapechar=ÃŸ,
+	xleftmargin=8pt,
+	xrightmargin=3pt,
+	basicstyle=\scriptsize\ttfamily,
+	morekeywords={function, in, not}
+}
+
+% META
+% =========================================================
+\title[Master Thesis]{Profiling GPU Shaders for Profile-Guided Optimizations}
+%\subtitle{}
+\author[S. Neubauer]{Sebastian Neubauer}
+\date{July 25, 2019}
+% Drop the following 2 lines if your title page is too full
+\institute{Technische Universität München}
+%\semester{SS 2017}
+
+% =========================================================
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\section{Introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{GPUs}{Hardware}
+\begin{itemize}
+	\item SIMD-units with 16 lanes
+	\item Pipeline with 4 stages
+	\item Virtually 64 SIMD lanes
+	\item Diverging control flow by\\masking lanes (SIMT)
+	\item AMD Radeon VII has 240\\SIMD units
+	% 240*64 = 3840
+\end{itemize}
+\begin{textblock*}{5cm}(11cm,1cm)
+	\input{figures/gpu-simd-pipeline.tex}
+\end{textblock*}
+% Difference for for-loops
+% CPU: SIMD operation for subsequent iteranions
+% GPU: SIMD for multiple threads
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includesvg[width=3cm]{figures/Vulkan_API_logo.svg}}
+\begin{frame}{Vulkan}{Software}
+\begin{itemize}
+	\item Graphics and compute standard for GPUs
+	\item Shaders are loaded in SPIR-V
+	\item Compilation to ISA happens in driver
+\end{itemize}
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{\only<-3>{General}\only<4>{Current State}\only<5->{This Thesis}}{Profile-Guided Optimization}
+\input{figures/steps.tex}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Basic Block Counting}
+	\centering
+	\includegraphics{figures/bb-count-overview-figure0.pdf}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure1.pdf}}
+\begin{frame}[fragile]{Basic Block Counting}{GLSL/SPIR-V}
+\begin{itemize}
+	\item GLSL gets precompiled to SPIR-V
+	\item SPIR-V is passed to driver
+\end{itemize}
+
+\begin{lstlisting}
+if (inputPos.x < 0.5) {
+	outColor = vec4(1.0, 0.0, 0.0, 1.0);
+} else {
+	outColor = vec4(0.0, 0.0, 1.0, 1.0);
+}
+\end{lstlisting}
+\end{frame}
+\framelogo{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure2.pdf}}
+\begin{frame}{Basic Block Counting}{CFG}
+	\centering
+	\input{figures/cfg.tex}
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure3.pdf}}
+\begin{frame}[fragile]{Basic Block Counting}{ELF}
+\begin{itemize}
+	\item ELF file contains metadata and sections for counters
+\end{itemize}
+
+\begin{lstlisting}[language=erlang]
+.text
+	<code>
+
+.rel.text
+	<relocations for counter-pointers>
+
+__llvm_prf_cnts
+	<zero initialized counters>
+
+__llvm_prf_data
+	<metadata>
+\end{lstlisting}
+\end{frame}
+\framelogo{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure4.pdf}}
+\begin{frame}{Basic Block Counting}{Save Counter}
+% This means the GPU pipeline, not LLVM!
+\begin{itemize}
+	\item Counters are saved when the pipeline is destroyed and every \SI{10}{\second}
+	\item Fetch counters from GPU memory
+	\item Write counters and metadata to file
+	%\item LLVM runtime library is linked into driver
+\end{itemize}
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Basic Block Counting}{Result}
+\begin{itemize}
+	\item Declares pixel shader as \emph{hot} and vertex shader as \emph{unlikely}
+	\item Changes basic block ordering
+\end{itemize}
+Some diagrams here
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includesvg[width=2cm]{clipart/Map.svg}}
+\begin{frame}{Future Work}
+\begin{itemize}
+	\item Find dynamically uniform variables
+	\item Create some interesting statistics, e.g. unused basic blocks, uniform branches
+	\item More benchmarks
+	\item (More optimizations)
+\end{itemize}
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{tumplainframe}{Thanks!}
+\begin{center}
+	\Huge Questions?
+\end{center}
+\end{tumplainframe}
+
+\end{document}
