@@ -1,0 +1,31 @@
+\scalebox{0.6}{
+\begin{tikzpicture}
+	\tikzstyle{simdbox}=[minimum height = 1cm, minimum width = 0.75cm,right=10mm, rectangle, draw=black, fill=color0]
+
+	\foreach \x in {0,...,3}{
+		\node[simdbox] at (0.75cm * \x, 0.5cm) {};
+	}
+
+	\node[simdbox] at (0.75cm * 0, -0.5cm) {};
+	\node[simdbox] at (0.75cm * 1, -0.5cm) {};
+	\foreach \x in {0,...,3}{
+		\node[simdbox, minimum height=0.5cm] at (0.75cm * \x, -1.25cm) {};
+	}
+
+	\node[simdbox] at (0.75cm * 2, -2cm) {};
+	\node[simdbox] at (0.75cm * 3, -2cm) {};
+	\foreach \x in {0,...,3}{
+		\node[simdbox] at (0.75cm * \x, -3cm) {};
+	}
+
+	\node[right=10mm] (description) at (0cm, 1.7cm) {\Large 64 \emph{virtual} lanes};
+	\node[right=10mm] (cycle-description) at (-2cm, 1.5cm) {Instruction};
+
+	\foreach \x in {0,...,9}{
+		\node (cycle\x) at (0.5cm, 1cm - 0.5cm * \x) {\x};
+		\draw[dashed, opacity=0.5] (cycle\x) -- ++(3.75cm, 0cm);
+	}
+
+	\draw[->] (0.8cm, 1cm) -- ++(0cm, -0.25cm - 9 * 0.5cm);
+\end{tikzpicture}
+}

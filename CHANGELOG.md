@@ -1,4 +1,5 @@
 # 2019-06-17 – 2019-06-22
+- GCC update breaks compilation
 - Prepare presentation
 
 # 2019-06-10 – 2019-06-16

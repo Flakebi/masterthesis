@@ -1,38 +1,47 @@
 \begin{center}
 \begin{tikzpicture}
-	\visible<-4>{
-		\draw[->] (0cm, 0cm) -- (8.3cm, 0cm);
+	\alt<2>{
+		\node[align=center, draw=color2] (compile) at (1cm, 0.5cm) {compile\\shader};
+		\node[align=center, draw=color0, right=of compile] (run) {run\\demo};
+		\node[align=center, draw=color0, right=of run] (compile2) {compile\\again};
+		\node[align=center, draw=color2, right=of compile2] (run2) {run\\application};
+	}{
+		\node[align=center, draw=black] (compile) at (1cm, 0.5cm) {compile\\shader};
+		\node[align=center, draw=black, right=of compile] (run) {run\\demo};
+		\node[align=center, draw=black, right=of run] (compile2) {compile\\again};
+		\node[align=center, draw=black, right=of compile2] (run2) {run\\application};
 	}
-	\foreach \x in {0,...,4}{
-		\draw (\x * 2cm, 0.1cm) -- (\x * 2cm, -0.1cm);
-	}
 
-	\node[align=center] at (1cm, 0.5cm) {compile\\shader};
-	\node[align=center] at (3cm, 0.5cm) {run\\demo};
-	\node[align=center] at (5cm, 0.5cm) {compile\\again};
-	\node[align=center] at (7cm, 0.5cm) {run\\application};
+	\draw[->] (compile) -- (run);
+	\draw[->] (run) -- (compile2);
+	\draw[->] (compile2) -- (run2);
 
-	\node[align=center, text=secondary] at (3cm, -0.7cm) {\footnotesize aggregate\\\footnotesize data};
-	\node[align=center, text=secondary] at (5cm, -0.7cm) {\footnotesize use\\\footnotesize data};
+	\node[align=center, text=secondary, below=0.2cm of run] (collect) {\footnotesize collect\\\footnotesize data};
+	\node[align=center, text=secondary, below=0.2cm of compile2] (use) {\footnotesize use\\\footnotesize data};
+	\node[align=center, rotate=-30, text=color2, above right=0.5cm and -0.7cm of run2] (faster) {\footnotesize hopefully\\\footnotesize faster!};
 
-	\visible<2->{
-		\node[align=center, rotate=-30, text=color2] at (8.5cm, 1.5cm) {\footnotesize hopefully\\\footnotesize faster!};
+	\visible<2>{
+		\node[text=color2, above=0.5cm of compile] {exists};
+		\node[text=color2, above=0.5cm of run2] {exists};
+		\node[fit=(run)(compile2)] (middle) {};
+		\node[align=center, text=color0, above=0.35cm of middle] {does not exist};
 	}
 
 	\visible<3>{
-		\node[align=center, text=color2] at (1cm, 2cm) {exists};
-		\node[align=center, text=color2] at (7cm, 2cm) {exists};
-		\node[align=center, text=highlight] at (4cm, -2cm) {does not exists};
+		\node[align=center, draw=black, thick, minimum width=1.5cm, minimum height=1cm] at (collect) {};
+		\node[align=center, text=highlight, below=0.2cm of collect] {original topic};
 	}
 
-	\visible<4>{
-		\node[align=center, draw=black, thick, minimum width=1.8cm, minimum height=1cm] at (3cm, -0.7cm) {};
-		\node[align=center, text=highlight] at (3cm, -1.5cm) {my topic};
+	\visible<4->{
+		\node[draw=black, above=0.5cm of run2, xshift=-0.5cm] (evaluate) {evaluation};
+		\draw[->] (run2.north-|evaluate) -- (evaluate);
+
+		\node[draw=black, thick, minimum width=1.5cm, minimum height=1cm, fit=(collect)(evaluate)(faster)] (topic) {};
+		\node[text=highlight, below=0.2cm of collect] {new topic};
 	}
 
 	\visible<5>{
-		\node[align=center] at (4cm, 2cm) {🎉 \alert{everything works} \tiny except being faster};
-		\draw[->, color=highlight, thick] (0cm, 0cm) -- (8.3cm, 0cm);
+		\node[above=0.5cm of topic] {\alert{everything works} 🎉};
 	}
 \end{tikzpicture}
 \end{center}

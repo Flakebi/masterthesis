@@ -9,7 +9,7 @@
 \usepackage{calc}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{positioning, calc, arrows.meta}
+\usetikzlibrary{positioning, calc, fit, arrows.meta}
 \usepackage{listings}
 \usepackage{siunitx}
 \usepackage{svg}
@@ -71,8 +71,11 @@
 	\item AMD Radeon VII has 240\\SIMD units
 	% 240*64 = 3840
 \end{itemize}
-\begin{textblock*}{5cm}(11cm,1cm)
+\begin{textblock*}{5cm}(12cm,0.5cm)
 	\input{figures/gpu-simd-pipeline.tex}
+\end{textblock*}
+\begin{textblock*}{5cm}(11.7cm,5cm)
+\input{figures/gpu-simd-condition.tex}
 \end{textblock*}
 % Difference for for-loops
 % CPU: SIMD operation for subsequent iteranions
@@ -90,7 +93,7 @@
 \end{frame}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}{\only<-3>{General}\only<4>{Current State}\only<5->{This Thesis}}{Profile-Guided Optimization}
+\begin{frame}{\only<-2>{Workflow}\only<3>{Current State}\only<4->{This Thesis}}{Profile-Guided Optimization}
 \input{figures/steps.tex}
 \end{frame}
 
@@ -132,7 +135,7 @@ if (inputPos.x < 0.5) {
 	\item ELF file contains metadata and sections for counters
 \end{itemize}
 
-\begin{lstlisting}[language=erlang]
+\begin{lstlisting}[language=erlang, morekeywords={text, rel, __llvm_prf_cnts, __llvm_prf_data}]
 .text
 	<code>
 
@@ -161,13 +164,14 @@ __llvm_prf_data
 \end{frame}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includesvg[width=2cm]{clipart/RacingFlag.svg}}
 \begin{frame}{Basic Block Counting}{Result}
 \begin{itemize}
 	\item Declares pixel shader as \emph{hot} and vertex shader as \emph{unlikely}
 	\item Changes basic block ordering
 \end{itemize}
 Some diagrams here
-\end{frame}
+\end{frame}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 {\framelogo{\centering\includesvg[width=2cm]{clipart/Map.svg}}

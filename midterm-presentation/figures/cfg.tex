@@ -12,17 +12,17 @@
 	\draw[->] (c) -- (d);
 
 	\visible<2>{
-		\node (insert) at (4cm, -1.5cm) {Insert counters here};
+		\node[text=highlight] (insert) at (4cm, -1.5cm) {Insert counters here};
 		\draw[->] (insert.west)++(0cm, 0.2cm) -- (a);
 		\draw[->] (insert.west) -- (c);
 	}
 
 	\visible<3->{
-		\node at (3cm, -1.5cm) {$\Rightarrow$};
+		\node[align=center] at (3cm, -1.5cm) {Structurize\\$\Rightarrow$};
 
 		\node[box] (a2) at (5cm, 1.5cm) {A};
 		\node[box] (b2) at (6cm, 0cm) {B};
-		\node[box] (a2') at (5cm, -1.5cm) {A'};
+		\node[box, align=center] (a2') at (5cm, -1.5cm) {flip\\mask};
 		\node[box] (c2) at (6cm, -3cm) {C};
 		\node[box] (d2) at (5cm, -4.5cm) {D};
 
@@ -35,7 +35,7 @@
 	}
 
 	\visible<4>{
-		\node[align=left] (insert) at (7.7cm, 1cm) {Insert\\counters\\here};
+		\node[align=left, text=highlight] (insert) at (7.7cm, 1.5cm) {Insert\\wave-counters\\here};
 		\draw[->] (insert) -- (a2);
 		\draw[->] (insert) -- (b2);
 		\draw[->] (insert) -- (c2);

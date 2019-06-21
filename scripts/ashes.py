@@ -3,6 +3,10 @@ from os import listdir
 from os.path import isfile, join
 import subprocess
 
+from utils import *
+
+name = "ashes"
+
 def extract_file(name):
 	res = []
 	with open(name, encoding = 'latin1') as f:
@@ -41,3 +45,4 @@ def old_main():
 def run(env, remove_cache, debug, sig):
 	subprocess.run(["/home/sebi/Masterarbeit/repo/scripts/ashes_start.sh"],
 		check=True, env=env)
+	# Find fps

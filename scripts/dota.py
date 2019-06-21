@@ -3,6 +3,10 @@ from os import path
 import shutil
 import subprocess
 
+from utils import *
+
+name = "dota"
+
 def run(env, remove_cache, debug, sig):
 	cache_path = "/mnt/bigdata/Dateien/Programme/Steam/steamapps/common/dota 2 beta/game/dota/shadercache"
 	sig_cache_path = f"{cache_path}-{sig}"
@@ -39,3 +43,14 @@ def run(env, remove_cache, debug, sig):
 
 	# Backup cache
 	os.rename(cache_path, sig_cache_path)
+
+	with open("/mnt/bigdata/Dateien/Programme/Steam/steamapps/common/dota 2 beta/game/dota/Source2Bench.csv", "r") as f:
+		# Get last line
+		for last in f:
+			pass
+
+	p = findnth(last, ",", 1)
+	p2 = last.find(",", p + 1)
+	fps = float(last[p + 1:p2].strip())
+	print(f"Got {fps} fps and {1/fps} ms")
+	return RunResult(1 / fps)
