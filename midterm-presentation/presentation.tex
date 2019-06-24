@@ -11,8 +11,9 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning, calc, fit, arrows.meta}
 \usepackage{listings}
-\usepackage{siunitx}
+\usepackage[separate-uncertainty=true]{siunitx}
 \usepackage{svg}
+\sisetup{per-mode=fraction, exponent-product=\cdot}
 
 \input{settings.tex}
 
@@ -64,17 +65,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{GPUs}{Hardware}
 \begin{itemize}
-	\item SIMD-units with 16 lanes
-	\item Pipeline with 4 stages
-	\item Virtually 64 SIMD lanes
+	\item SIMD-units with 64 lanes
 	\item Diverging control flow by\\masking lanes (SIMT)
 	\item AMD Radeon VII has 240\\SIMD units
 	% 240*64 = 3840
 \end{itemize}
-\begin{textblock*}{5cm}(12cm,0.5cm)
-	\input{figures/gpu-simd-pipeline.tex}
-\end{textblock*}
-\begin{textblock*}{5cm}(11.7cm,5cm)
+%\begin{textblock*}{5cm}(12cm,0.5cm)
+%	\input{figures/gpu-simd-pipeline.tex}
+%\end{textblock*}
+\begin{textblock*}{5cm}(11.7cm,2cm)
 \input{figures/gpu-simd-condition.tex}
 \end{textblock*}
 % Difference for for-loops
@@ -170,7 +169,19 @@ __llvm_prf_data
 	\item Declares pixel shader as \emph{hot} and vertex shader as \emph{unlikely}
 	\item Changes basic block ordering
 \end{itemize}
-Some diagrams here
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includesvg[width=2cm]{clipart/RacingFlag.svg}}
+\begin{frame}{Basic Block Counting}{Result}
+\begin{itemize}
+	\item Dota: No change apart from compilation speed on first run
+\end{itemize}
+\includegraphics[width=10cm]{figures/dota.pdf}
+\begin{itemize}
+	\item Ashes: \SI{60.007 \pm 0.004}{\milli\second} vs \SI{60.009 \pm 0.003}{\milli\second}
+\end{itemize}
+\includegraphics[width=10cm]{figures/ashes.pdf}
 \end{frame}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
