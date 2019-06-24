@@ -9,22 +9,22 @@
   </Generated>
   <Result>
     <Identifier>dota</Identifier>
-    <Title>Dota</Title>
-    <AppVersion></AppVersion>
+    <Title>Test Scene</Title>
+    <AppVersion>1.0</AppVersion>
     <Description></Description>
     <Scale>Milliseconds Per Frame</Scale>
     <Proportion>LIB</Proportion>
     <DisplayFormat>BAR_GRAPH</DisplayFormat>
     <Data>
       <Entry>
-        <Identifier>Normal</Identifier>
-        <Value>24.15</Value>
-        <RawString>24.154589371980677:24.154589371980677:24.154589371980677:24.154589371980677:24.154589371980677</RawString>
+        <Identifier></Identifier>
+        <Value>24.609111215001818</Value>
+        <RawString>26.881720430107524:24.154589371980677:24.154589371980677:24.154589371980677:24.154589371980677:24.154589371980677</RawString>
       </Entry>
       <Entry>
-        <Identifier>PGO</Identifier>
-        <Value>24.15</Value>
-        <RawString>24.154589371980677:24.154589371980677:24.154589371980677:24.21307506053269:24.096385542168676</RawString>
+        <Identifier>use-wave-late</Identifier>
+        <Value>24.633375957611737</Value>
+        <RawString>27.027027027027028:24.154589371980677:24.154589371980677:24.154589371980677:24.21307506053269:24.096385542168676</RawString>
       </Entry>
     </Data>
   </Result>

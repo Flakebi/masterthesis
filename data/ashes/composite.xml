@@ -2,14 +2,14 @@
 <!--Phoronix Test Suite v7.2.0-->
 <PhoronixTestSuite>
   <Generated>
-    <Title>dota</Title>
+    <Title>ashes</Title>
     <LastModified>2019-06-03 00:00:00</LastModified>
     <TestClient>Phoronix Test Suite v7.2.0 (Trysil)</TestClient>
     <Description>Intel Core i7-5820K testing with a MSI X99S SLI PLUS (MS-7885) v1.0 and Gigabyte NVIDIA GeForce GTX 750 1024MB on Arch rolling via the Phoronix Test Suite.</Description>
   </Generated>
   <Result>
-    <Identifier>dota</Identifier>
-    <Title>Dota</Title>
+    <Identifier>ashes</Identifier>
+    <Title>Ashes of the Singularity</Title>
     <AppVersion></AppVersion>
     <Description></Description>
     <Scale>Milliseconds Per Frame</Scale>
@@ -18,13 +18,13 @@
     <Data>
       <Entry>
         <Identifier>Normal</Identifier>
-        <Value>24.15</Value>
-        <RawString>24.154589371980677:24.154589371980677:24.154589371980677:24.154589371980677:24.154589371980677</RawString>
+        <Value>60.007</Value>
+        <RawString>60.000168:60.005981:60.014511</RawString>
       </Entry>
       <Entry>
         <Identifier>PGO</Identifier>
-        <Value>24.15</Value>
-        <RawString>24.154589371980677:24.154589371980677:24.154589371980677:24.21307506053269:24.096385542168676</RawString>
+        <Value>60.009</Value>
+        <RawString>60.011822:60.003418:60.013168</RawString>
       </Entry>
     </Data>
   </Result>
