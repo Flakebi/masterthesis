@@ -52,5 +52,5 @@ def run(env, remove_cache, debug, sig):
 	p = findnth(last, ",", 1)
 	p2 = last.find(",", p + 1)
 	fps = float(last[p + 1:p2].strip())
-	print(f"Got {fps} fps and {1/fps} ms")
+	print(f"Got {fps} fps and {1/fps} s")
 	return RunResult(1 / fps)

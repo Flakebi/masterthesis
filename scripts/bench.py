@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from copy import copy
+from jinja2 import Environment, FileSystemLoader
 import math
 import os
 import shutil
@@ -125,15 +126,25 @@ def bench(args):
 			results[config].append(r)
 
 	print(f"\nResults:")
-	for config, fps in results.items():
-		times = [f.frame_time for f in fps]
+	tmpl_results = []
+	for config, res in results.items():
+		times = [r.frame_time for r in res]
 		avg_time = avg(times)
 
 		if len(times) > 1:
-			time_dev = deviationStudentT(times) / math.sqrt(len(times))
+			time_dev = deviationStudentT(times)
 		else:
 			time_dev = 0
 		print(f"{config.get_signature()}: {times}\n\t({avg(times) * 1000} ± {time_dev * 1000}) ms")
+
+		times = [t * 1000 for t in times]
+		tmpl_results.append((config.get_signature(), avg(times), ":".join([str(t) for t in times])))
+
+	env = Environment(loader=FileSystemLoader(""))
+	template = env.get_template("composite.xml.j2")
+	res = template.render(game=args.game, results=tmpl_results)
+	with open("composite.xml", "w") as f:
+		f.write(res)
 
 def main():
 	parser = argparse.ArgumentParser(description="Benchmarks!")

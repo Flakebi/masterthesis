@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v7.2.0-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>{{ game }}</Title>
+    <LastModified>2019-06-03 00:00:00</LastModified>
+    <TestClient>Phoronix Test Suite v7.2.0 (Trysil)</TestClient>
+    <Description>Intel Core i7-5820K testing with a MSI X99S SLI PLUS (MS-7885) v1.0 and Gigabyte NVIDIA GeForce GTX 750 1024MB on Arch rolling via the Phoronix Test Suite.</Description>
+  </Generated>
+  <Result>
+    <Identifier>{{ game }}</Identifier>
+    <Title>Test Scene</Title>
+    <AppVersion>1.0</AppVersion>
+    <Description></Description>
+    <Scale>Milliseconds Per Frame</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      {%- for r in results %}
+      <Entry>
+        <Identifier>{{ r[0] }}</Identifier>
+        <Value>{{ r[1] }}</Value>
+        <RawString>{{ r[2] }}</RawString>
+      </Entry>
+      {%- endfor %}
+    </Data>
+  </Result>
+</PhoronixTestSuite>
