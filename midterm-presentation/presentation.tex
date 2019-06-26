@@ -11,9 +11,12 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning, calc, fit, arrows.meta}
 \usepackage{listings}
+\usepackage{pgfplots}
 \usepackage[separate-uncertainty=true]{siunitx}
 \usepackage{svg}
+
 \sisetup{per-mode=fraction, exponent-product=\cdot}
+\pgfplotsset{width=10cm, height=3cm, grid style = dotted, compat=1.16}
 
 \input{settings.tex}
 
@@ -128,27 +131,27 @@ if (inputPos.x < 0.5) {
 \end{frame}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure3.pdf}}
-\begin{frame}[fragile]{Basic Block Counting}{ELF}
-\begin{itemize}
-	\item ELF file contains metadata and sections for counters
-\end{itemize}
+%\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure3.pdf}}
+%\begin{frame}[fragile]{Basic Block Counting}{ELF}
+%\begin{itemize}
+%	\item ELF file contains metadata and sections for counters
+%\end{itemize}
 
-\begin{lstlisting}[language=erlang, morekeywords={text, rel, __llvm_prf_cnts, __llvm_prf_data}]
-.text
-	<code>
+%\begin{lstlisting}[language=erlang, morekeywords={text, rel, __llvm_prf_cnts, __llvm_prf_data}]
+%.text
+%	<code>
 
-.rel.text
-	<relocations for counter-pointers>
+%.rel.text
+%	<relocations for counter-pointers>
 
-__llvm_prf_cnts
-	<zero initialized counters>
+%__llvm_prf_cnts
+%	<zero initialized counters>
 
-__llvm_prf_data
-	<metadata>
-\end{lstlisting}
-\end{frame}
-\framelogo{}
+%__llvm_prf_data
+%	<metadata>
+%\end{lstlisting}
+%\end{frame}
+%\framelogo{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 {\framelogo{\centering\includegraphics[width=3cm]{figures/bb-count-overview-figure4.pdf}}
@@ -174,15 +177,74 @@ __llvm_prf_data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 {\framelogo{\centering\includesvg[width=2cm]{clipart/RacingFlag.svg}}
 \begin{frame}{Basic Block Counting}{Result}
-\begin{itemize}
-	\item Dota: No change apart from compilation speed on first run
-\end{itemize}
-\includegraphics[width=10cm]{figures/dota.pdf}
-\begin{itemize}
-	\item Ashes: \SI{60.007 \pm 0.004}{\milli\second} vs \SI{60.009 \pm 0.003}{\milli\second}
-\end{itemize}
-\includegraphics[width=10cm]{figures/ashes.pdf}
+{\color{secondary}Dota 2: No change apart from compilation speed on first run}
+\begin{tikzpicture}
+\pgfplotsset{every non boxed y axis/.append style={y axis line style=-}}
+\begin{axis}[
+	xbar=0.2cm,
+	xlabel={{\color{secondary}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
+	symbolic y coords={Normal,PGO},
+	xmin=0,
+	xmax=30,
+	ytick=data,
+	nodes near coords, nodes near coords align={horizontal},
+	bar width=0.5cm,
+	grid=both,
+	axis lines=left,
+	enlarge y limits=0.5,
+	y=1cm,
+	%legend style={at={(1,1)},anchor=north east}
+]
+
+\addplot [
+	fill=secondary,
+	%only marks,
+	%mark = +,
+	%mark size = 1.5,
+	%error bars/.cd,
+	%y dir = both,
+	%y fixed = 0.08
+] coordinates {(24.15,Normal) (24.15,PGO)};
+\end{axis}
+\end{tikzpicture}
+\ \\
+
+{\color{secondary}Ashes of the Singularity: \SI{60.007 \pm 0.004}{\milli\second} vs \SI{60.009 \pm 0.003}{\milli\second}}
+\begin{tikzpicture}
+\pgfplotsset{every non boxed y axis/.append style={y axis line style=-}}
+\begin{axis}[
+	xbar=0.2cm,
+	xlabel={{\color{secondary}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
+	symbolic y coords={Normal,PGO},
+	xmin=0,
+	xmax=75,
+	ytick=data,
+	nodes near coords, nodes near coords align={horizontal},
+	nodes near coords style={/pgf/number format/precision=5},
+	bar width=0.5cm,
+	grid=both,
+	axis lines=left,
+	enlarge y limits=0.5,
+	y=1cm,
+]
+
+\addplot [
+	fill=secondary,
+] coordinates {(60.007,Normal) (60.009,PGO)};
+\end{axis}
+\end{tikzpicture}
 \end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{My Work}
+\begin{itemize}
+	\item Enable atomic basic block counters in LLVM
+	\item Implement ELF loading and relocations in AMDVLK
+	\item Write result files from driver
+	\item Apply PGO per wave instead of per thread
+	\item Fix bugs in LLVM (with PGO on GPUs)
+\end{itemize}
+\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 {\framelogo{\centering\includesvg[width=2cm]{clipart/Map.svg}}
@@ -194,6 +256,75 @@ __llvm_prf_data
 	\item (More optimizations)
 \end{itemize}
 \end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Dead Code}{Ashes of the Singularity}
+\begin{tikzpicture}
+\begin{axis}[
+	xlabel={\#BBs in a shader},
+	ylabel={\#Shaders},
+	ymax=35,
+	grid=both,
+	axis lines=left,
+]
+	
+\addplot [
+	fill=secondary,
+] table {data/ashes_bbs.txt}
+\closedcycle;
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}
+\begin{axis}[
+	xlabel={\#BBs in a shader},
+	ylabel={Unused code [$\%$]},
+	ymax=0.19,
+	yticklabel style={ /pgf/number format/fixed, /pgf/number format/precision=2},
+	grid=both,
+	axis lines=left,
+]
+	
+\addplot [
+	fill=secondary,
+] table {data/ashes_dead.txt};
+\end{axis}
+\end{tikzpicture}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Dead Code}{Dota}
+\begin{tikzpicture}
+\begin{axis}[
+	xlabel={\#BBs in a shader},
+	ylabel={\#Shaders},
+	ymax=35,
+	grid=both,
+	axis lines=left,
+]
+	
+\addplot [
+	fill=secondary,
+] table {data/dota_bbs.txt}
+\closedcycle;
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}
+\begin{axis}[
+	xlabel={\#BBs in a shader},
+	ylabel={Unused code [$\%$]},
+	%ymax=0.19,
+	yticklabel style={ /pgf/number format/fixed, /pgf/number format/precision=2},
+	grid=both,
+	axis lines=left,
+]
+
+\addplot [
+fill=secondary,
+] table {data/dota_dead.txt}
+\closedcycle;
+\end{axis}
+\end{tikzpicture}
+\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{tumplainframe}{Thanks!}

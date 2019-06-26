@@ -1,12 +1,13 @@
 from math import *
 
 class RunConfig:
-	def __init__(self, gen=False, use=False, per_wave=False, late=False, uniform=False):
+	def __init__(self, gen=False, use=False, per_wave=False, late=False, uniform=False, analysis=False):
 		self.gen = gen
 		self.use = use
 		self.per_wave = per_wave
 		self.late = late
 		self.uniform = uniform
+		self.analysis = analysis
 
 	def get_signature(self):
 		sig = ""
@@ -62,3 +63,52 @@ def findnth(haystack, needle, n):
 	if len(parts) <= n + 1:
 		return -1
 	return len(haystack) - len(parts[-1]) - len(needle)
+
+def to10slots(data):
+	"""Sum data into 10 slots"""
+	res = [0] * 10
+	for i, d in enumerate(data):
+		res[i * 10 // len(data)] += d
+
+	return res
+
+def get_slotted_data(data, maximum):
+	"""Match x coordinates to data in slots"""
+	step = maximum / len(data)
+	return [(int((i + 1) * step), d) for i, d in enumerate(data)]
+
+def create_histograms(data):
+	# Filter out unused shaders
+	prev_len = len(data)
+	data = [(z, c) for z, c in data if z != c]
+	print(f"{100 - len(data) / prev_len * 100}% of shaders is unused")
+	max_bbs = max([c for _, c in data])
+	print(f"Up to {max_bbs} basic blocks")
+
+	dead_code = [(0, 0)] * (max_bbs + 1)
+	for z, c in data:
+		a, b = dead_code[c]
+		dead_code[c] = (a + z, b + c)
+
+	def safe_divide(z, c):
+		if c == 0:
+			return 0
+		else:
+			return z / c
+
+	dead_code = [safe_divide(z, c) for z, c in dead_code]
+	print(f"Dead code: {to10slots(dead_code)}")
+
+	bb_count = [0] * (max_bbs + 1)
+	for _, c in data:
+		bb_count[c] += 1
+
+	print(f"BB count: {to10slots(bb_count)}")
+
+	print("\nDead code")
+	for a, b in get_slotted_data(to10slots(dead_code), max_bbs):
+		print(f"{a}\t{b}")
+
+	print("\nBB count")
+	for a, b in get_slotted_data(to10slots(bb_count), max_bbs):
+		print(f"{a}\t{b}")

@@ -1,4 +1,8 @@
-# 2019-06-17 – 2019-06-22
+# 2019-06-24 – 2019-06-30
+- Count unreachable code
+- Improve presentation
+
+# 2019-06-17 – 2019-06-23
 - Benchmark: Need 11:30 for 2×6 dota benchmarks, 30 minutes for 2×3 ashes benchmarks
 - GCC update breaks compilation
 - Prepare presentation

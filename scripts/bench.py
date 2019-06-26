@@ -15,7 +15,7 @@ import vulkan_sponza
 games = [dota, ashes, vulkan_sponza]
 
 def run_game(name, config, remove_cache=True, debug=False):
-	if (not config.gen and not config.use) and (config.per_wave or config.late or config.uniform):
+	if (not config.gen and not config.use) and (config.per_wave or config.late or config.uniform or config.analysis):
 		print("WARNING PGO options have no meaning when PGO is not in use")
 
 	sig = config.get_signature()
@@ -40,6 +40,8 @@ def run_game(name, config, remove_cache=True, debug=False):
 		env["AMDVLK_PROFILE_LATE"] = "1"
 	if config.uniform:
 		env["AMDVLK_PROFILE_UNIFORM"] = "1"
+	if config.analysis:
+		env["AMDVLK_PROFILE_ANALYSIS"] = "1"
 
 	if name == "test":
 		subprocess.run("env", check=True, env=env, shell=True)
@@ -146,19 +148,65 @@ def bench(args):
 	with open("composite.xml", "w") as f:
 		f.write(res)
 
+def analysis(args):
+	"""Run the PGO analyzation pass, this needs existing PGO generated data"""
+	config = RunConfig(gen=True, per_wave=True, late=True)
+	sig = config.get_signature()
+	print(f"\n\nRunning {sig}")
+	# run_game(args.game, config, debug=args.debug)
+
+	config = RunConfig(use=True, per_wave=True, late=True, analysis=True)
+	sig = config.get_signature()
+	analysis_file = "/tmp/mydriveranalysis.txt"
+	if os.path.isfile(analysis_file):
+		os.remove(analysis_file)
+
+	print(f"\n\nAnalyzing {sig}")
+	run_game(args.game, config, debug=args.debug)
+
+	shaders = []
+	with open(analysis_file) as f:
+		first = True
+		for l in f:
+			l = l.strip()
+			if l == "Compiling":
+				if not first:
+					shaders.append((zero, total))
+				else:
+					first = False
+
+				zero = 0
+				total = 0
+			elif l == "Count is 0":
+				zero += 1
+				total += 1
+			elif l.startswith("Count is "):
+				total += 1
+			elif len(l) != 0:
+				raise Exception(f"Unknown line '{l}'")
+
+		if not first:
+			shaders.append((zero, total))
+
+	print(f"Shaders: {shaders}")
+
 def main():
+	actions = {
+		"diff": diff,
+		"bench": bench,
+		"analysis": analysis,
+	}
+
 	parser = argparse.ArgumentParser(description="Benchmarks!")
-	parser.add_argument("action", choices=["diff", "bench", "setup", "teardown"])
+	parser.add_argument("action", choices=list(actions.keys()) + ["setup", "teardown"])
 	game_names = [g.name for g in games]
 	parser.add_argument("-g", "--game", choices=game_names + ["test"])
 	parser.add_argument("-d", "--debug", help="Start in a debugger")
 
 	args = parser.parse_args()
 
-	if args.action == "diff":
-		diff(args)
-	if args.action == "bench":
-		bench(args)
+	if args.action in actions:
+		actions[args.action](args)
 	elif args.action == "setup":
 		setup()
 	elif args.action == "teardown":
