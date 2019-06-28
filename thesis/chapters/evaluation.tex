@@ -1,7 +1,58 @@
 \clearpage
 \bigsection{Evaluation}
 Something like threads to validity: Inserting profiling code into a shader changes the behavior of the shader.
+Impact of instrumentation makes it slower, however the rendered scenes stay the same, we may get smaller counter values than without instrumentation
 It should have no impact when measuring branch probabilities, as the taken branches do not change when inserting the branch counting code \emph{after optimizations}.
 
-\subsection{Evaluation}
-\label{sub:evaluation}
+\subsection{Effects}
+\label{sub:effets}
+The basic block counters influence order of basic blocks -> No impact on performance on most shaders?
+Marks pixel shaders as hot and vertex shaders as unlikely -> No impact on performance.
+
+\subsection{Shader Size}
+\label{sub:size}
+Shaders are small programs compared to CPU programs, more like a single function. This means the number of basic blocks in a shader is low as seen in \cref{dia:shader_bbs}.
+
+% TODO Use bars per 5 BBS (0-5, …)
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+	ybars,
+	xlabel={\#BBs in a shader},
+	ylabel={\#Shaders},
+	grid=both,
+	axis lines=left,
+]
+
+\addplot [
+	%fill=secondary,
+] table {data/dota_bbs.txt}
+\closedcycle;
+\end{axis}
+\end{tikzpicture}
+\end{center}
+\caption{The amount of basic blocks per shader in the game Dota 2}
+\label{dia:shader_bbs_dota}
+\end{figure}
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+	ybars,
+	xlabel={\#BBs in a shader},
+	ylabel={\#Shaders},
+	grid=both,
+	axis lines=left,
+	]
+	
+\addplot [
+	%fill=secondary,
+] table {data/ashes_bbs.txt}
+\closedcycle;
+\end{axis}
+\end{tikzpicture}
+\end{center}
+\caption{The amount of basic blocks per shader in the game Ashes of the Singularity}
+\label{dia:shader_bbs_ashes}
+\end{figure}

@@ -1,4 +1,6 @@
 # 2019-06-24 – 2019-06-30
+- Capturing uniformity works, counter is 0 if variable is uniform
+- Continue writing thesis
 - Count unreachable code
 - Improve presentation
 
