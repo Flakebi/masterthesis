@@ -79,10 +79,13 @@ def teardown():
 
 def diff(args):
 	"""Run a game with different PGO options to compare the compiled output"""
-	config = RunConfig(False, False, False, False, False)
+	config = RunConfig()
 	sig = config.get_signature()
 	print(f"\n\nRunning {sig}")
-	run_game(args.game, config, debug=args.debug)
+	try:
+		run_game(args.game, config, debug=args.debug)
+	except:
+		pass
 
 	# Save pipelines
 	orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
@@ -91,14 +94,16 @@ def diff(args):
 	os.rename(orig_pipe_folder, pipe_folder)
 
 	for gen in [True, False]:
-		# This takes forever…
-		#for per_wave in [True, False]:
-		for per_wave in [True]:
+		for per_wave in [False]:
 			for late in [True, False]:
-				config = RunConfig(gen, not gen, per_wave, late, False)
+				config = RunConfig(gen=gen, use=not gen, per_wave=per_wave, late=late, uniform=True)
 				sig = config.get_signature()
 				print(f"\n\nRunning {sig}")
-				run_game(args.game, config, debug=args.debug)
+				try:
+					run_game(args.game, config, debug=args.debug)
+				except:
+					print("Error running game")
+					pass
 
 				# Save pipelines
 				orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
@@ -108,9 +113,9 @@ def diff(args):
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
-	configs = [RunConfig(), RunConfig(use=True, per_wave=True, late=True)]
+	configs = [RunConfig(), RunConfig(use=True, per_wave=True, late=True, uniform=True)]
 
-	config = RunConfig(gen=True, per_wave=True, late=True)
+	config = RunConfig(gen=True, per_wave=True, late=True, uniform=True)
 	sig = config.get_signature()
 	print(f"\n\nRunning {sig}")
 	run_game(args.game, config, debug=args.debug)

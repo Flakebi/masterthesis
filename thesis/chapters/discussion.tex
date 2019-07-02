@@ -4,32 +4,18 @@
 
 \subsection{Related Work}
 \label{sub:relatedwork}
+A part of this work is to profile shaders. There are many GPU profiling tools~\cite{UnityGPUProfiler, UnrealGPUProfiling, MSGPUUsage, PGI2014}.
+Most of them show the needed computation time down to single draw calls or overall GPU performance statistics like occupancy\footnote{The amount of simultaneously executed threads on a \gls{cu}, hiding memory latency},used memory bandwidth and compute power~\cite{NvidiaNsight, NvidiaShaderPerf, AMDShaderAnalyzer}.
+There are only few, which show detailed information about the inside of shaders. E.g GPUOcelot can trace single instructions in shaders when emulating CUDA applications on the GPU~\cite{GPUOcelot, Lakshminarayana2010}. Pyramid is an emulator and shader analyzer for various architectures, including AMD GCN~\cite{Pyramid}.
+While emulation can provide accurate information, we cannot run our application at the same speed as on the GPU as the CPU has much less computational power.
+Arm has something~\cite{Barton2013}.
+In the high-performance computing space, they used Lynx~\cite{lynx} to instrument CUDA applications and automatically measure performance statistics~\cite{Farooqui2014}.
 
-\subsection{General}
-\begin{itemize}
-	\item Benchmarks: Cuda SDK, Parboil, Rodinia, SHOC, Tensor
-	\item OCAT: \url{https://gpuopen.com/ocat-1-2/}
-	\item GPUPertStudio, GPU Shader Analyzer, Multi2Sim, Lynx on GPUs
-\end{itemize}
-
-\subsection{Shader Analysis}
-\begin{sloppypar}
-	\begin{itemize}
-		\item \url{https://www.cc.gatech.edu/fac/hyesoon/gputhread.pdf}
-		\item GPUOcelot: Emulation and tracing of cuda code
-		\item \url{https://armkeil.blob.core.windows.net/developer/Files/pdf/graphics-and-multimedia/Analyzing-Performance-of-Mobile-Games.pdf}: Arm
-		\item \url{http://www.joshbarczak.com/blog/?p=823}, \url{https://github.com/jbarczak/Pyramid}: Offline shader analyser
-	\end{itemize}
-\end{sloppypar}
+Benchmarks: Cuda SDK, Parboil, Rodinia, SHOC, Tensor (cite) but not Vulkan so we cannot use it. VComputeBench claims to be a general, publicly available benchmark for GPGPU~\cite{Mammeri2018}. However, we were unable to find these benchmarks online and the author did not respond to our questions.
 
 \subsection{PGO}
-% Needed for urls
 \begin{sloppypar}
 	\begin{itemize}
-		\item \url{https://www.usenix.org/system/files/conference/trios14/trios14-paper-farooqui.pdf}: PGO is called \enquote{Profile driven development} in HPC
-		\item \url{https://www.pgroup.com/doc/pgprof14ug.pdf}: Using pgprof
-		\item \url{https://www.duo.uio.no/bitstream/handle/10852/40283/dravhandling-saetra-DUO.pdf?sequence=4#page=60}: HPC
-		\item \url{https://www.researchgate.net/profile/Santonu_Sarkar/publication/300919071_A_Profile_Guided_Approach_to_Optimize_Branch_Divergence_While_Transforming_Applications_for_GPUs/links/58789a1408aebf17d3be1ff9/A-Profile-Guided-Approach-to-Optimize-Branch-Divergence-While-Transforming-Applications-for-GPUs.pdf}
 		\item \url{https://ieeexplore.ieee.org/abstract/document/5336219} (not downloaded)
 		\item \url{https://dl.acm.org/citation.cfm?id=2832093} (not downloaded): Guided profiling for auto-tuning array layouts on GPUs
 	\end{itemize}

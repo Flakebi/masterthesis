@@ -1,3 +1,8 @@
+# 2019-07-01 – 2019-07-07
+- Add citations to related work
+- Add pass to remove unused code
+- Try to build switch-case vm to test PGO performance but it is lowered to branches in IR (not SDAG), which does not use probabilities
+
 # 2019-06-24 – 2019-06-30
 - Capturing uniformity works, counter is 0 if variable is uniform
 - Continue writing thesis
