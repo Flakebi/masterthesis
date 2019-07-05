@@ -1,13 +1,14 @@
 from math import *
 
 class RunConfig:
-	def __init__(self, gen=False, use=False, per_wave=False, late=False, uniform=False, analysis=False):
+	def __init__(self, gen=False, use=False, per_wave=False, late=False, uniform=False, analysis=False, remove=False):
 		self.gen = gen
 		self.use = use
 		self.per_wave = per_wave
 		self.late = late
 		self.uniform = uniform
 		self.analysis = analysis
+		self.remove = remove
 
 	def get_signature(self):
 		sig = ""
@@ -31,6 +32,10 @@ class RunConfig:
 			if len(sig) != 0:
 				sig += "-"
 			sig += "uniform"
+		if self.remove:
+			if len(sig) != 0:
+				sig += "-"
+			sig += "remove"
 		return sig
 
 class RunResult:

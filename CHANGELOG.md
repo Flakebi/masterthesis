@@ -1,4 +1,8 @@
 # 2019-07-01 – 2019-07-07
+- Start installing UE4 and the infiltrator demo on windows
+- Removing unused code works with dota and ashes, no changes in performance
+- Write some text in the design section
+- Removing unused code works with switch-case vm, not with dota
 - Add citations to related work
 - Add pass to remove unused code
 - Try to build switch-case vm to test PGO performance but it is lowered to branches in IR (not SDAG), which does not use probabilities

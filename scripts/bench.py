@@ -42,6 +42,8 @@ def run_game(name, config, remove_cache=True, debug=False):
 		env["AMDVLK_PROFILE_UNIFORM"] = "1"
 	if config.analysis:
 		env["AMDVLK_PROFILE_ANALYSIS"] = "1"
+	if config.remove:
+		env["AMDVLK_PROFILE_REMOVE"] = "1"
 
 	if name == "test":
 		subprocess.run("env", check=True, env=env, shell=True)
@@ -93,10 +95,10 @@ def diff(args):
 	shutil.rmtree(pipe_folder, ignore_errors=True)
 	os.rename(orig_pipe_folder, pipe_folder)
 
-	for gen in [True, False]:
-		for per_wave in [False]:
-			for late in [True, False]:
-				config = RunConfig(gen=gen, use=not gen, per_wave=per_wave, late=late, uniform=True)
+	for gen in [False]:
+		for per_wave in [True]:
+			for late in [True]:
+				config = RunConfig(gen=gen, use=not gen, per_wave=per_wave, late=late, remove=True)
 				sig = config.get_signature()
 				print(f"\n\nRunning {sig}")
 				try:
@@ -113,9 +115,10 @@ def diff(args):
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
-	configs = [RunConfig(), RunConfig(use=True, per_wave=True, late=True, uniform=True)]
+	configs = [RunConfig(), RunConfig(use=True, per_wave=True, late=True, remove=True)]
+	# uniform=True
 
-	config = RunConfig(gen=True, per_wave=True, late=True, uniform=True)
+	config = RunConfig(gen=True, per_wave=True, late=True, remove=True)
 	sig = config.get_signature()
 	print(f"\n\nRunning {sig}")
 	run_game(args.game, config, debug=args.debug)

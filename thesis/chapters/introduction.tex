@@ -107,7 +107,7 @@ jmp endif
 
 \subsection{Notation}
 \label{sub:notation}
-There exist quite a few different notations for the different logical and physical parts of a GPU. Different vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
+There exist quite a few different notations for the logical and physical parts of a GPU. Multiple vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
 
 Throughout this paper, we will use the term SIMD lane for a single work-item. As a wavefront (AMD) or warp (NVIDIA) is run on a SIMD unit, we will use the expression SIMD unit.
 
@@ -116,3 +116,14 @@ Throughout this paper, we will use the term SIMD lane for a single work-item. As
 
 \subsection{Contributions}
 \label{sub:contributions}
+This work contributes instrumentations for Vulkan on AMD GPUs in the AMDVLK driver. We use the instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
+
+One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{BB} is executed. This allows us to detect hot paths in shaders and optimize them more aggressively.
+
+A second instrumentation counts how often certain variables are uniform or divergent at runtime. A uniform variable has the same value on all active lanes on a SIMD unit, which permits optimizations that are impossible for divergent variables.
+
+For some popular games, we use the developed instrumentations and present statistics about unused shader code and the uniformity of conditions. We measure and evalute the effect of optimizations in LLVM when accurate BB counts are available. To test the impact of compiled but unused code, we measure the effect when removing code that gets never executed in the selected benchmarks.
+
+To accomplish our goals, we reuse the existing infrastructure in LLVM for profile-guided optimizations. We extend and modify LLVM and the AMD driver to support our instrumentations and use the collected data.
+
+We discuss the effect of inserting instrumentation counters on the SIMD unit level\footnote{After structurizing the \gls{cfg} as explained in \cref{sub:structurize}} or per lane.
