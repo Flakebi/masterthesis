@@ -64,7 +64,7 @@ def deviationStudentT(xs):
 
 # Under CC-BY-SA from https://stackoverflow.com/questions/1883980/find-the-nth-occurrence-of-substring-in-a-string
 def findnth(haystack, needle, n):
-	parts= haystack.split(needle, n + 1)
+	parts = haystack.split(needle, n + 1)
 	if len(parts) <= n + 1:
 		return -1
 	return len(haystack) - len(parts[-1]) - len(needle)
@@ -74,7 +74,13 @@ def to10slots(data):
 	res = [0] * 10
 	for i, d in enumerate(data):
 		res[i * 10 // len(data)] += d
+	return res
 
+def to_slots5(data):
+	"""Sum data into slots where each slot sums up 5 numbers"""
+	res = [0] * ((len(data) + 4) // 5)
+	for i, d in enumerate(data):
+		res[i // 5] += d
 	return res
 
 def get_slotted_data(data, maximum):
@@ -102,18 +108,23 @@ def create_histograms(data):
 			return z / c
 
 	dead_code = [safe_divide(z, c) for z, c in dead_code]
-	print(f"Dead code: {to10slots(dead_code)}")
+	print(f"Dead code: {to_slots5(dead_code)}")
 
 	bb_count = [0] * (max_bbs + 1)
 	for _, c in data:
 		bb_count[c] += 1
 
-	print(f"BB count: {to10slots(bb_count)}")
+	print(f"BB count: {to_slots5(bb_count)}")
 
 	print("\nDead code")
-	for a, b in get_slotted_data(to10slots(dead_code), max_bbs):
+	for a, b in get_slotted_data(to_slots5(dead_code), max_bbs):
 		print(f"{a}\t{b}")
+	for i, a in enumerate(to_slots5(dead_code)):
+		print(f"{i*5+2.5}\t{a}")
 
 	print("\nBB count")
-	for a, b in get_slotted_data(to10slots(bb_count), max_bbs):
-		print(f"{a}\t{b}")
+	for i, a in enumerate(to_slots5(bb_count)):
+		print(f"{i*5+2.5}\t{a}")
+
+	# for a, b in get_slotted_data(to_slots5(bb_count), max_bbs):
+		# print(f"{a}\t{b}")

@@ -80,16 +80,18 @@ jmp endif
 \end{minipage}
 
 % TODO
-\subsubsection{Skip branches}
-\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
-\paragraph{Description} Only insert the branch skip instruction for the scalar unit if often all or no SIMD lanes take the branch. Otherwise, do not insert it as both branches are executed anyway.
-\paragraph{Background} This optimization is an example which has no counterpart for CPUs. CPUs do not have the ability to run SIMD instructions only on a part of the lanes.
-\paragraph{Example}
-	
 \subsubsection{Prefetch Textures from Branches}
 \paragraph{Needed data} Branch probabilities
 \paragraph{Description} Texture fetches that happen in branches are sometimes moved before the branch by the compiler -- so executed unconditionally. This has the effect that the shader can do some work and then use the loaded texture value when it is available. The optimization speeds up the execution if the branch condition evaluates to true. However, if the condition evaluates to false, it will degrade performance because the GPU unnecessarily fetches memory.
 \paragraph{Background} Prefetching textures is already done but without any information about how often a texture is needed.
+\paragraph{Example}
+
+\subsubsection{Improve register allocation and occupancy}
+\paragraph{Needed data} Branch probabilities
+\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{SMT} fashion. If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same compute unit because the register memory is not large enough to hold the registers for more instances at the same time.
+Therefore, reducing the registers that a shader needs or spilling registers into memory can improve performance. However, we should not spill registers in the hot path, as this will degrade performance again.
+Branch probabilities can provide the information, where we can spill registers and where not.
+\paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use less registers is never a performance gain.
 \paragraph{Example}
 
 \subsubsection{Value Profiling}
@@ -102,8 +104,14 @@ jmp endif
 \subsubsection{Detect Uniform Computations}
 \paragraph{Needed data} Variable value distribution on a SIMD unit
 \paragraph{Description} If we do a computation or memory fetch on the same value for every lane on a SIMD unit, i.e. it is uniform, the code can be optimized to be executed only once by the scalar unit instead of the vector unit.
-\paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution. Using scalar instructions yields great benefits as described in this paper by Chen~\cite{Chen2016}.
+\paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution. Compared to value profiling, we do not need to store used values but only if a value was uniform or not. Using scalar instructions yields great benefits as described in this paper by Chen~\cite{Chen2016}.
 \paragraph{Example} Address values are the same on a SIMD unit, so we fetch memory with the scalar unit.
+
+\subsubsection{Skip branches}
+\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
+\paragraph{Description} Only insert the branch skip instruction for the scalar unit if often all or no SIMD lanes take the branch. Otherwise, do not insert it as both branches are executed anyway.
+\paragraph{Background} This optimization is an example which has no counterpart for CPUs. CPUs do not have the ability to run SIMD instructions only on a part of the lanes. This is a special case of detecting uniform computations where the question is if the condition variable is uniform or not.
+\paragraph{Example}
 
 \subsection{Notation}
 \label{sub:notation}

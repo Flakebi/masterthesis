@@ -81,7 +81,16 @@ In 1973, \citet{Knuth1973} showed and proofed an algorithm to find a minimal set
 
 \subsection{Structurizing the CFG}
 \label{sub:structurize}
-%TODO
+We cannot have divergent control flow within a single SIMD unit. However, the shader code that the compiler gets is not in a form which can be executed vectorized.
+Therefore the compiler needs to change the \gls{cfg} in such a way, that it gets suitable for SIMD units and gracefully handles diverging control flow.
+In LLVM, this pass is called \texttt{StructurizeCFG}.
+
+The CFG structurization converts the control flow so it sets the EXEC mask and runs both, the if- and the else-branch if necessary. The result of such a transformation is shown in \cref{fig:structurize}. Loops are transformed such that the whole unit runs the loop until the last lane finishes.
+
+\begin{figure}
+	\centering
+	\input{figures/structurize-cfg.tex}
+\end{figure}
 
 \subsection{The Executable and Linkable Format}
 \label{sub:elf}

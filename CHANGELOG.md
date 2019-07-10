@@ -1,3 +1,6 @@
+# 2019-07-08 – 2019-07-14
+- Work on thesis: Improve diagrams, fix various todos
+
 # 2019-07-01 – 2019-07-07
 - Start installing UE4 and the infiltrator demo on windows
 - Removing unused code works with dota and ashes, no changes in performance

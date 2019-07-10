@@ -1,0 +1,32 @@
+\scalebox{0.8}{
+\begin{tikzpicture}
+	\tikzstyle{box}=[minimum height=0.8cm, minimum width=0.8cm, rectangle, draw=black]
+
+	\node[box] (a) at (0cm, 0cm) {A};
+	\node[box] (b) at (-1cm, -1.5cm) {B};
+	\node[box] (c) at (1cm, -1.5cm) {C};
+	\node[box] (d) at (0cm, -3cm) {D};
+
+	\draw[->] (a) -- (b);
+	\draw[->] (a) -- (c);
+	\draw[->] (b) -- (d);
+	\draw[->] (c) -- (d);
+
+	\node[align=center] at (3cm, -1.5cm) {Structurize\\$\Rightarrow$};
+
+	\node[box] (a2) at (5cm, 1.5cm) {A};
+	\node[box] (b2) at (6cm, 0cm) {B};
+	\node[box, align=center] (a2') at (5cm, -1.5cm) {flip\\mask};
+	\node[box] (c2) at (6cm, -3cm) {C};
+	\node[box] (d2) at (5cm, -4.5cm) {D};
+
+	\draw[->] (a2) -- (b2);
+	\draw[->] (a2) -- (a2');
+	\draw[->] (b2) -- (a2');
+	\draw[->] (a2') -- (c2);
+	\draw[->] (a2') -- (d2);
+	\draw[->] (c2) -- (d2);
+\end{tikzpicture}
+}
+\captionof{figure}{Transforming the CFG for an \emph{if-else} on SIMD units with the \texttt{StructurizeCFG} pass}
+\label{fig:structurize}

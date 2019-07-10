@@ -15,10 +15,10 @@ The concrete steps then are like following:
 The paths to profile data files should contain a \texttt{\%i} which will get replaced by the pipeline id when data is loaded and stored.
 When generating data, \texttt{\%m} can also be used to insert a unique id by LLVM into the filename.
 
-% TODO Explain structurizecfg
 By default, the basic block counters are inserted at before the CFG gets structurized and they are counting for each SIMD lane.
-To count the executed basic blocks per SIMD unit instead of per lane and to insert them after structurizing the CFG, use \texttt{AMDVLK\_PROFILE\_PER\_WAVE=1 AMDVLK\_PROFILE\_LATE=1}.
-% TODO Analysis, uniforms
+To count the executed basic blocks per SIMD unit instead of per lane and to insert them after structurizing the CFG, we set the environment variables \texttt{AMDVLK\_PROFILE\_PER\_WAVE=1 AMDVLK\_PROFILE\_LATE=1}.
+To add profiling and usage for the uniformity of special variables, we set the environment variable \texttt{AMDVLK\_PROFILE\_UNIFORM=1}.
+When using the previously collected data, we have the option to analyze the outcome and write it to a file. The variable \texttt{AMDVLK\_PROFILE\_ANALYSIS=1} is used for this purpose.
 
 \subsection{Compiling Shaders}
 \label{sub:compiling}
@@ -41,6 +41,15 @@ exec = savereg
 \label{sub:impl_uniformity}
 % TODO
 Reuse counter infrastructure of basic block counting so the only new thing is how to find uniformity.
+As with basic block counters, we can capture the uniformity of variables before or after the \texttt{StructurizeCFG} pass. If we capture before structurizing, we should count the amount of lanes that are affected by a divergent variable.
+So when a SIMD unit currently has 12 active lanes and the variable of interest is not uniform across these lanes, we add 12 to the counter.
+On the other hand if we insert the counters after structurization, we want to count the SIMD units instead of lanes. This means for a non-uniform variable, we add one to the counter, no matter how many lanes are active.
+After the structurization pass ran, we cannot inspect the normal conditions of branches anymore because they do not represent the branches from the shader code.
+% TODO amdgpu.if intrinsic?
+Instead, we have to search for inserted \texttt{if} intrinsic and look at the uniformity of its argument.
+In both cases, if the variable we are capturing is uniform, the counter keeps its value.
+
+After capturing data, we can compare the uniformity counters with the basic block counters. Dividing the uniformity counter by the total executions, which is stored in the basic block counter, we get the fraction of runs where a variable is divergent.
 \begin{lstlisting}[caption={Check a variable for uniformity},language={[x86masm]Assembler}]
 %y = %x == read_first_lane
 %z = popcount(vcc) > 0
@@ -81,6 +90,5 @@ A problem that turned up when using profiling data is the \texttt{ControlHeightR
 This pass is specific to profile-guided optimizations and it duplicats some basic blocks and -- based on a condition -- executes one or the other.
 For some shaders in Dota 2, it duplicated the last block which contains the \texttt{export} intrinsic call. This intrinsic is responsible for exporting a position in the vertex shader or a final color in the pixel shader.
 While the \texttt{export} instruction still gets executed once per SIMD lane after the block duplication, it now gets executed multiple times per SIMD unit.
-This leads to problems, because it has a meaning for the whole SIMD unit, e.g. the \texttt{finish} flag tells the GPU that this is the last \texttt{export} instruction on this unit. Executing multiple \texttt{export} instructions with the \texttt{finish} flag set leads to GPU hangs.
-% TODO finish?
+This leads to problems, because it has a meaning for the whole SIMD unit, e.g. the \texttt{done} flag tells the GPU that this is the last \texttt{export} instruction on this unit. Executing multiple \texttt{export} instructions with the \texttt{done} flag set leads to GPU hangs.
 To fix this bug, we marked the \texttt{export} intrinsic as \emph{convergent} which means it shall not depend on additional control flow and modified the \texttt{ControlHeightReduction} pass so it does not duplicate blocks with convergent intrinsics.
