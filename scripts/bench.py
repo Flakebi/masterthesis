@@ -4,15 +4,19 @@ from copy import copy
 from jinja2 import Environment, FileSystemLoader
 import math
 import os
+from os import listdir
+from os.path import isfile, join
 import shutil
 import subprocess
 
 import ashes
 import dota
+import switch_vm
+import test_uniform
 from utils import *
 import vulkan_sponza
 
-games = [dota, ashes, vulkan_sponza]
+games = [dota, ashes, vulkan_sponza, switch_vm, test_uniform]
 
 def run_game(name, config, remove_cache=True, debug=False):
 	if (not config.gen and not config.use) and (config.per_wave or config.late or config.uniform or config.analysis):
@@ -79,6 +83,57 @@ def teardown():
 	subprocess.run("echo 2 > /sys/class/drm/card0/device/hwmon/hwmon0/pwm1_enable", check=True, shell=True)
 	pass
 
+def extract(line, key):
+	if key in line:
+		p0 = line.rfind('x') + 1
+		return int(line[p0:], 16)
+	return None
+
+def registers(args):
+	configs = [
+		RunConfig(),
+		RunConfig(gen=True, per_wave=True, late=True, remove=True),
+		RunConfig(use=True, per_wave=True, late=True, remove=True),
+	]
+
+	registers = {}
+	for config in configs:
+		rs = []
+		sig = config.get_signature()
+		path = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
+		files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith(".pipe")]
+		for file in files:
+			vs_vgprs = 0
+			vs_sgprs = 0
+			ps_vgprs = 0
+			ps_sgprs = 0
+			with open(join(path, file), "r") as f:
+				for l in f:
+					r = extract(l, "VS_NUM_USED_VGPRS")
+					if r is not None:
+						vs_vgprs = r
+					r = extract(l, "VS_NUM_USED_SGPRS")
+					if r is not None:
+						vs_sgprs = r
+					r = extract(l, "PS_NUM_USED_VGPRS")
+					if r is not None:
+						ps_vgprs = r
+					r = extract(l, "PS_NUM_USED_SGPRS")
+					if r is not None:
+						ps_sgprs = r
+
+			if vs_vgprs == 0 and ps_vgprs == 0:
+				continue
+			rs.append([vs_vgprs, vs_sgprs, ps_vgprs, ps_sgprs])
+			# print(f"{file}\nVS vgprs: {vs_vgprs}\n   sgprs: {vs_sgprs}\nPS vgprs: {ps_vgprs}\n   sgprs: {ps_sgprs}\n")
+
+		# Compute average
+		sums = [sum(r) / len(rs) for r in zip(*rs)]
+		print(f"{sig}: {sums}")
+
+		registers[config] = rs
+		# print("")
+
 def diff(args):
 	"""Run a game with different PGO options to compare the compiled output"""
 	config = RunConfig()
@@ -95,33 +150,31 @@ def diff(args):
 	shutil.rmtree(pipe_folder, ignore_errors=True)
 	os.rename(orig_pipe_folder, pipe_folder)
 
-	for gen in [False]:
-		for per_wave in [True]:
-			for late in [True]:
-				config = RunConfig(gen=gen, use=not gen, per_wave=per_wave, late=late, remove=True)
-				sig = config.get_signature()
-				print(f"\n\nRunning {sig}")
-				try:
-					run_game(args.game, config, debug=args.debug)
-				except:
-					print("Error running game")
-					pass
+	for gen in [True, False]:
+		for uniform in [False, True]:
+			config = RunConfig(gen=gen, use=not gen, late=True, uniform=uniform)
+			sig = config.get_signature()
+			print(f"\n\nRunning {sig}")
+			# try:
+			run_game(args.game, config, debug=args.debug)
+			# except:
+				# print("Error running game")
+				# pass
 
-				# Save pipelines
-				orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
-				pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
-				shutil.rmtree(pipe_folder, ignore_errors=True)
-				os.rename(orig_pipe_folder, pipe_folder)
+			# Save pipelines
+			orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
+			pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
+			shutil.rmtree(pipe_folder, ignore_errors=True)
+			os.rename(orig_pipe_folder, pipe_folder)
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
-	configs = [RunConfig(), RunConfig(use=True, per_wave=True, late=True, remove=True)]
-	# uniform=True
+	configs = [RunConfig(), RunConfig(use=True, late=True, uniform=True)]
 
-	config = RunConfig(gen=True, per_wave=True, late=True, remove=True)
+	config = RunConfig(gen=True, late=True, uniform=True)
 	sig = config.get_signature()
 	print(f"\n\nRunning {sig}")
-	run_game(args.game, config, debug=args.debug)
+	# run_game(args.game, config, debug=args.debug)
 
 	results = {}
 	for config in configs:
@@ -158,12 +211,12 @@ def bench(args):
 
 def analysis(args):
 	"""Run the PGO analyzation pass, this needs existing PGO generated data"""
-	config = RunConfig(gen=True, per_wave=True, late=True)
+	config = RunConfig(gen=True, uniform=True, late=True)
 	sig = config.get_signature()
 	print(f"\n\nRunning {sig}")
-	# run_game(args.game, config, debug=args.debug)
+	run_game(args.game, config, debug=args.debug)
 
-	config = RunConfig(use=True, per_wave=True, late=True, analysis=True)
+	config = RunConfig(use=True, uniform=True, late=True, analysis=True)
 	sig = config.get_signature()
 	analysis_file = "/tmp/mydriveranalysis.txt"
 	if os.path.isfile(analysis_file):
@@ -172,37 +225,52 @@ def analysis(args):
 	print(f"\n\nAnalyzing {sig}")
 	run_game(args.game, config, debug=args.debug)
 
-	shaders = []
+	dead_code = []
+	uniformity = []
 	with open(analysis_file) as f:
 		first = True
 		for l in f:
 			l = l.strip()
 			if l == "Compiling":
 				if not first:
-					shaders.append((zero, total))
+					dead_code.append((zero, total))
+					uniformity.append((uni_static, uni_dynamic, uni_divergent))
 				else:
 					first = False
 
 				zero = 0
 				total = 0
+
+				uni_static = 0
+				uni_dynamic = 0
+				uni_divergent = 0
 			elif l == "Count is 0":
 				zero += 1
 				total += 1
 			elif l.startswith("Count is "):
 				total += 1
+			elif l.startswith("Static uniform"):
+				uni_static += 1
+			elif l.startswith("Dynamic uniform"):
+				uni_dynamic += 1
+			elif l.startswith("Divergent"):
+				uni_divergent += 1
 			elif len(l) != 0:
 				raise Exception(f"Unknown line '{l}'")
 
 		if not first:
-			shaders.append((zero, total))
+			dead_code.append((zero, total))
+			uniformity.append((uni_static, uni_dynamic, uni_divergent))
 
-	print(f"Shaders: {shaders}")
+	print(f"Dead code: {dead_code}")
+	print(f"Uniformity: {uniformity}")
 
 def main():
 	actions = {
 		"diff": diff,
 		"bench": bench,
 		"analysis": analysis,
+		"registers": registers,
 	}
 
 	parser = argparse.ArgumentParser(description="Benchmarks!")

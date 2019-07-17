@@ -1,4 +1,13 @@
+# 2019-07-15 – 2019-07-21
+- Uniformity analyses works with late, per-lane
+- Try to analyze switch-vm with RGP but there is not much to see
+- Still compiling infiltrator demo, runs on linux
+
 # 2019-07-08 – 2019-07-14
+- Analyze uniformity of branches in dota and ashes: Everything is uniform…
+- Start compiling infiltrator demo
+- Count used registers when removing code for dota and switch-vm → tiny change
+- Test removing dead code with switch-vm removes all branches but has no speed improvement
 - Work on thesis: Improve diagrams, fix various todos
 
 # 2019-07-01 – 2019-07-07
