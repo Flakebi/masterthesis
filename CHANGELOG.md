@@ -1,4 +1,10 @@
+# 2019-07-22 – 2019-07-28
+- Analyze uniformity of dota
+- Can analyze addresses and loaded values for uniformity, early analysis is not perfectly accurate (addresses are marked as non-uniform early, but emit scalar load; switch not yet lowered to branches), works with late analysis (apart from loops)
+- Use FunctionPass instead of ModulePass makes TargetTransformInfoWrapperPass available → LegacyDivergenceAnalysis works early
+
 # 2019-07-15 – 2019-07-21
+- Dead code removal improved performance of switch-vm by 0.1%
 - Uniformity analyses works with late, per-lane
 - Try to analyze switch-vm with RGP but there is not much to see
 - Still compiling infiltrator demo, runs on linux

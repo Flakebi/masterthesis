@@ -151,8 +151,8 @@ def diff(args):
 	os.rename(orig_pipe_folder, pipe_folder)
 
 	for gen in [True, False]:
-		for uniform in [False, True]:
-			config = RunConfig(gen=gen, use=not gen, late=True, uniform=uniform)
+		for uniform in [True, False]:
+			config = RunConfig(gen=gen, use=not gen, uniform=uniform)
 			sig = config.get_signature()
 			print(f"\n\nRunning {sig}")
 			# try:
@@ -169,13 +169,22 @@ def diff(args):
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
-	configs = [RunConfig(), RunConfig(use=True, late=True, uniform=True)]
+	if len(args.config) < 2:
+		raise Exception("Please tell me the configs")
 
-	config = RunConfig(gen=True, late=True, uniform=True)
-	sig = config.get_signature()
-	print(f"\n\nRunning {sig}")
-	# run_game(args.game, config, debug=args.debug)
+	configs = [get_config(c) for c in args.config]
 
+	print("Generating PGO data")
+	for c in configs:
+		if c.use:
+			config = copy(c)
+			config.use = False
+			config.gen = True
+			sig = config.get_signature()
+			print(f"\n\nRunning {sig}")
+			run_game(args.game, config, debug=args.debug)
+
+	print("Starting benchmark")
 	results = {}
 	for config in configs:
 		results[config] = []
@@ -211,19 +220,29 @@ def bench(args):
 
 def analysis(args):
 	"""Run the PGO analyzation pass, this needs existing PGO generated data"""
-	config = RunConfig(gen=True, uniform=True, late=True)
-	sig = config.get_signature()
-	print(f"\n\nRunning {sig}")
-	run_game(args.game, config, debug=args.debug)
+	if len(args.config) > 1:
+		raise Exception("Analysis only uses one config")
+	if len(args.config) == 1:
+		config = get_config(args.config[0])
+	else:
+		config = RunConfig()
 
-	config = RunConfig(use=True, uniform=True, late=True, analysis=True)
-	sig = config.get_signature()
+	gen_config = copy(config)
+	gen_config.gen = True
+	sig = gen_config.get_signature()
+	print(f"\n\nRunning {sig}")
+	# run_game(args.game, gen_config, debug=args.debug)
+
+	an_config = copy(config)
+	an_config.use = True
+	an_config.analysis = True
+	sig = an_config.get_signature()
 	analysis_file = "/tmp/mydriveranalysis.txt"
 	if os.path.isfile(analysis_file):
 		os.remove(analysis_file)
 
 	print(f"\n\nAnalyzing {sig}")
-	run_game(args.game, config, debug=args.debug)
+	run_game(args.game, an_config, debug=args.debug)
 
 	dead_code = []
 	uniformity = []
@@ -231,39 +250,86 @@ def analysis(args):
 		first = True
 		for l in f:
 			l = l.strip()
+
 			if l == "Compiling":
 				if not first:
 					dead_code.append((zero, total))
-					uniformity.append((uni_static, uni_dynamic, uni_divergent))
+					uniformity.append({
+						"static": uni_static,
+						"dynamic": uni_dynamic,
+						"divergent": uni_divergent,
+					})
 				else:
 					first = False
 
 				zero = 0
 				total = 0
 
-				uni_static = 0
-				uni_dynamic = 0
-				uni_divergent = 0
+				uni_static = {
+					"Condition": 0,
+					"Address": 0,
+					"LoadValue": 0,
+				}
+				uni_dynamic = {
+					"Condition": 0,
+					"Address": 0,
+					"LoadValue": 0,
+				}
+				uni_divergent = {
+					"Condition": 0,
+					"Address": 0,
+					"LoadValue": 0,
+				}
 			elif l == "Count is 0":
 				zero += 1
 				total += 1
 			elif l.startswith("Count is "):
 				total += 1
-			elif l.startswith("Static uniform"):
-				uni_static += 1
-			elif l.startswith("Dynamic uniform"):
-				uni_dynamic += 1
-			elif l.startswith("Divergent"):
-				uni_divergent += 1
+			elif l.endswith("Static uniform"):
+				typ = l[:l.find(":")]
+				uni_static[typ] += 1
+			elif l.endswith("Dynamic uniform"):
+				typ = l[:l.find(":")]
+				uni_dynamic[typ] += 1
+			elif l.endswith("Divergent"):
+				typ = l[:l.find(":")]
+				uni_divergent[typ] += 1
 			elif len(l) != 0:
 				raise Exception(f"Unknown line '{l}'")
 
 		if not first:
 			dead_code.append((zero, total))
-			uniformity.append((uni_static, uni_dynamic, uni_divergent))
+			uniformity.append({
+				"static": uni_static,
+				"dynamic": uni_dynamic,
+				"divergent": uni_divergent,
+			})
 
 	print(f"Dead code: {dead_code}")
 	print(f"Uniformity: {uniformity}")
+
+def get_config(options):
+	config = RunConfig()
+
+	for o in options.split(","):
+		if o == "gen":
+			config.gen = True
+		elif o == "use":
+			config.use = True
+		elif o == "late":
+			config.late = True
+		elif o == "per_wave":
+			config.per_wave = True
+		elif o == "uniform":
+			config.uniform = True
+		elif o == "remove":
+			config.remove = True
+		elif o == "analysis":
+			config.analysis = True
+		else:
+			raise Exception(f"Unknown PGO option {o}")
+
+	return config
 
 def main():
 	actions = {
@@ -277,7 +343,8 @@ def main():
 	parser.add_argument("action", choices=list(actions.keys()) + ["setup", "teardown"])
 	game_names = [g.name for g in games]
 	parser.add_argument("-g", "--game", choices=game_names + ["test"])
-	parser.add_argument("-d", "--debug", help="Start in a debugger")
+	parser.add_argument("-d", "--debug", action="store_true", help="Start in a debugger")
+	parser.add_argument("-c", "--config", action="append", help="Enabled PGO options, comma-separated")
 
 	args = parser.parse_args()
 

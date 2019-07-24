@@ -51,6 +51,10 @@ def run(env, remove_cache, debug, sig):
 
 	p = findnth(last, ",", 1)
 	p2 = last.find(",", p + 1)
-	fps = float(last[p + 1:p2].strip())
+	try:
+		fps = float(last[p + 1:p2].strip())
+	except:
+		print("Failed to extract dota fps")
+		fps = 1
 	print(f"Got {fps} fps and {1/fps} s")
 	return RunResult(1 / fps)
