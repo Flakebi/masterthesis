@@ -134,38 +134,57 @@ def registers(args):
 		registers[config] = rs
 		# print("")
 
+def run(args):
+	"""Run a game with the supplied PGO options"""
+	if len(args.config) < 1:
+		raise Exception("Please tell me the configs")
+
+	configs = [get_config(c) for c in args.config]
+
+	for config in configs:
+		sig = config.get_signature()
+		print(f"\n\nRunning {sig}")
+		r = run_game(args.game, config, debug=args.debug)
+
+		# Save pipelines
+		orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
+		pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
+		shutil.rmtree(pipe_folder, ignore_errors=True)
+		os.rename(orig_pipe_folder, pipe_folder)
+
 def diff(args):
 	"""Run a game with different PGO options to compare the compiled output"""
-	config = RunConfig()
-	sig = config.get_signature()
-	print(f"\n\nRunning {sig}")
-	try:
-		run_game(args.game, config, debug=args.debug)
-	except:
-		pass
+	if len(args.config) < 1:
+		raise Exception("Please tell me the configs")
 
-	# Save pipelines
-	orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
-	pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
-	shutil.rmtree(pipe_folder, ignore_errors=True)
-	os.rename(orig_pipe_folder, pipe_folder)
+	configs = [get_config(c) for c in args.config]
 
-	for gen in [True, False]:
-		for uniform in [True, False]:
-			config = RunConfig(gen=gen, use=not gen, uniform=uniform)
+	print("Generating PGO data")
+	for c in configs:
+		if c.use:
+			config = copy(c)
+			config.use = False
+			config.gen = True
 			sig = config.get_signature()
 			print(f"\n\nRunning {sig}")
-			# try:
 			run_game(args.game, config, debug=args.debug)
-			# except:
-				# print("Error running game")
-				# pass
 
 			# Save pipelines
 			orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
 			pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
 			shutil.rmtree(pipe_folder, ignore_errors=True)
 			os.rename(orig_pipe_folder, pipe_folder)
+
+	for config in configs:
+		sig = config.get_signature()
+		print(f"\n\nRunning {sig}")
+		r = run_game(args.game, config, debug=args.debug)
+
+		# Save pipelines
+		orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
+		pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
+		shutil.rmtree(pipe_folder, ignore_errors=True)
+		os.rename(orig_pipe_folder, pipe_folder)
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
@@ -231,7 +250,7 @@ def analysis(args):
 	gen_config.gen = True
 	sig = gen_config.get_signature()
 	print(f"\n\nRunning {sig}")
-	# run_game(args.game, gen_config, debug=args.debug)
+	run_game(args.game, gen_config, debug=args.debug)
 
 	an_config = copy(config)
 	an_config.use = True
@@ -251,7 +270,7 @@ def analysis(args):
 		for l in f:
 			l = l.strip()
 
-			if l == "Compiling":
+			if l.startswith("Compiling"):
 				if not first:
 					dead_code.append((zero, total))
 					uniformity.append({
@@ -307,12 +326,15 @@ def analysis(args):
 
 	print(f"Dead code: {dead_code}")
 	print(f"Uniformity: {uniformity}")
+	print(f"Aggregated uniformity: {aggregate(uniformity)}")
 
 def get_config(options):
 	config = RunConfig()
 
 	for o in options.split(","):
-		if o == "gen":
+		if o == "":
+			pass
+		elif o == "gen":
 			config.gen = True
 		elif o == "use":
 			config.use = True
@@ -333,6 +355,7 @@ def get_config(options):
 
 def main():
 	actions = {
+		"run": run,
 		"diff": diff,
 		"bench": bench,
 		"analysis": analysis,

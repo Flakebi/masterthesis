@@ -128,3 +128,17 @@ def create_histograms(data):
 
 	# for a, b in get_slotted_data(to_slots5(bb_count), max_bbs):
 		# print(f"{a}\t{b}")
+
+def aggregate(vals):
+	res = {}
+	for val in vals:
+		for k, l in val.items():
+			if k not in res:
+				res[k] = {}
+			for k2, v in l.items():
+				if k2 not in res[k]:
+					res[k][k2] = v
+				else:
+					res[k][k2] += v
+
+	return res

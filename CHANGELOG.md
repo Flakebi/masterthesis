@@ -1,3 +1,10 @@
+# 2019-08-12 – 2019-08-18
+- Improve switch-vm, yields a 21% performance boost with unused-code-removal now
+- Get non-uniformity count
+- Dota has no non-uniform values for uniform addresses anymore
+
+### 2019-07-29 – 2019-08-11
+
 # 2019-07-22 – 2019-07-28
 - Analyze uniformity of dota
 - Can analyze addresses and loaded values for uniformity, early analysis is not perfectly accurate (addresses are marked as non-uniform early, but emit scalar load; switch not yet lowered to branches), works with late analysis (apart from loops)

@@ -10,9 +10,9 @@ name = "switch"
 
 def run(env, remove_cache, debug, sig):
 	if debug:
-		args = ["lldb", "../../../target/debug/triangle", "--"]
+		args = ["lldb", "../../../target/release/switch-vm", "--"]
 	else:
-		args = ["../../../target/debug/triangle"]
+		args = ["../../../target/release/switch-vm"]
 	with subprocess.Popen(args, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True,
 		env=env, cwd="/home/sebi/Dokumente/Dateien/Programme/Libraries/vulkano/examples/src/bin") as p, io.StringIO() as buf:
 
