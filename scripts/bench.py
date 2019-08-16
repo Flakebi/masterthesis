@@ -9,21 +9,27 @@ from os.path import isfile, join
 import shutil
 import subprocess
 
+from utils import *
+
 import ashes
 import dota
+import dow3
+import f12017
+import infiltrator
+import madmax
 import switch_vm
 import test_uniform
-from utils import *
 import vulkan_sponza
 
-games = [dota, ashes, vulkan_sponza, switch_vm, test_uniform]
+games = [ashes, dota, dow3, f12017, infiltrator, madmax, switch_vm, test_uniform, vulkan_sponza]
 
 def run_game(name, config, remove_cache=True, debug=False):
 	if (not config.gen and not config.use) and (config.per_wave or config.late or config.uniform or config.analysis):
 		print("WARNING PGO options have no meaning when PGO is not in use")
 
 	sig = config.get_signature()
-	env = dict(os.environ)
+	#env = dict(os.environ)
+	env = {}
 	env["VK_ICD_FILENAMES"] = "/mnt/newvms/Masterarbeit/vulkandriver/drivers/amd_icd64.json"
 	pgo_config = copy(config)
 	pgo_config.gen = False
@@ -89,16 +95,27 @@ def extract(line, key):
 		return int(line[p0:], 16)
 	return None
 
+def register_diff(a, b):
+	return sum([abs(x - y) for x, y in zip(a, b)])
+
+def registers_diff(registers, f):
+	diff = 0
+	reg_vals = list(registers.values())
+	reg0 = reg_vals[0][f]
+	for rs in reg_vals[1:]:
+		if f in rs:
+			diff += register_diff(reg0, rs[f])
+	return diff
+
 def registers(args):
-	configs = [
-		RunConfig(),
-		RunConfig(gen=True, per_wave=True, late=True, remove=True),
-		RunConfig(use=True, per_wave=True, late=True, remove=True),
-	]
+	if len(args.config) < 1:
+		raise Exception("Please tell me the configs")
+
+	configs = [get_config(c) for c in args.config]
 
 	registers = {}
 	for config in configs:
-		rs = []
+		rs = {}
 		sig = config.get_signature()
 		path = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
 		files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith(".pipe")]
@@ -124,15 +141,31 @@ def registers(args):
 
 			if vs_vgprs == 0 and ps_vgprs == 0:
 				continue
-			rs.append([vs_vgprs, vs_sgprs, ps_vgprs, ps_sgprs])
+			rs[file] = [vs_vgprs, vs_sgprs, ps_vgprs, ps_sgprs]
 			# print(f"{file}\nVS vgprs: {vs_vgprs}\n   sgprs: {vs_sgprs}\nPS vgprs: {ps_vgprs}\n   sgprs: {ps_sgprs}\n")
 
 		# Compute average
-		sums = [sum(r) / len(rs) for r in zip(*rs)]
+		rs_vals = rs.values()
+		sums = [sum(r) / len(rs_vals) for r in zip(*rs_vals)]
 		print(f"{sig}: {sums}")
 
 		registers[config] = rs
 		# print("")
+
+	# Sort by difference
+	diffs = []
+	for f in registers[configs[0]].keys():
+		diffs.append((f, registers_diff(registers, f)))
+
+	diffs = sorted(diffs, reverse=True, key=lambda d: d[1])
+
+	diffs = diffs[:min(10, len(diffs))]
+	for d in diffs:
+		print(d[0])
+		for config in configs:
+			sig = config.get_signature()
+			print(f"  {sig}: {registers[config][d[0]]}")
+		print()
 
 def run(args):
 	"""Run a game with the supplied PGO options"""

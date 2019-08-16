@@ -39,7 +39,7 @@ def run(env, remove_cache, debug, sig):
 		"+timedemoquit", "dota2-pts-1971360796",
 		"+timedemo_start", "50000",
 		"+timedemo_end", "51000",
-	], check=True, env=env)
+	], check=True, env={**env, **dict(os.environ)})
 
 	# Backup cache
 	os.rename(cache_path, sig_cache_path)

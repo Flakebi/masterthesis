@@ -1,4 +1,17 @@
 # 2019-08-12 – 2019-08-18
+- Try to run game benchmarks
+	- **Ashes of the Singularity: Escalation**: Working
+	- **Dota 2**: Working
+	- **F1 2017**: Running, uses a shader cache and I don’t know where it is
+	- F1 2018: Not starting
+	- **Mad Max**: Running, uses a shader cache and I don’t know where it is
+	- Serious Sam Fusion 2017: Running, but I cannot start the benchmarks automatically and inject environment variables
+	- Total War Saga: Thrones of Britannia: Steam installs an empty folder
+	- **Warhammer 40,000: Dawn of War III**: Running, uses a shader cache and I don’t know where it is
+- Able to run Mad Max benchmark with the beta (https://www.reddit.com/r/linux_gaming/comments/8b6wyv/mad_max_benchmark_how/), run with `steam -applaunch 234140 --feral-banchmark`
+- Unreal infiltrator works with PGO, uses more registers with PGO, little more than PGO when removing code
+- Try to automatically start F1 2017
+- Unreal infiltrator crashes when using PGO instrumentation
 - Improve switch-vm, yields a 21% performance boost with unused-code-removal now
 - Get non-uniformity count
 - Dota has no non-uniform values for uniform addresses anymore

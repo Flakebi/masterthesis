@@ -14,7 +14,7 @@ def run(env, remove_cache, debug, sig):
 	else:
 		args = ["../../../target/debug/test-uniform"]
 	with subprocess.Popen(args, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True,
-		env=env, cwd="/home/sebi/Dokumente/Dateien/Programme/Libraries/vulkano/examples/src/bin") as p, io.StringIO() as buf:
+		env={**env, **dict(os.environ)}, cwd="/home/sebi/Dokumente/Dateien/Programme/Libraries/vulkano/examples/src/bin") as p, io.StringIO() as buf:
 
 		for line in p.stdout:
 			print(line, end='')

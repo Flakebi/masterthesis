@@ -1,4 +1,5 @@
 import sys
+import os
 from os import listdir
 from os.path import isfile, join
 import subprocess
@@ -44,7 +45,7 @@ def old_main():
 
 def run(env, remove_cache, debug, sig):
 	subprocess.run(["/home/sebi/Masterarbeit/repo/scripts/ashes_start.sh"],
-		check=True, env=env)
+		check=True, env={**env, **dict(os.environ)})
 
 	# Find fps
 	path = "/mnt/bigdata/Dateien/Programme/Steam/steamapps/compatdata/507490/pfx/drive_c/users/steamuser/My Documents/My Games/Ashes of the Singularity - Escalation"
