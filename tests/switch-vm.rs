@@ -17,7 +17,6 @@
 // and that you want to learn Vulkan. This means that for example it won't go into details about
 // what a vertex or a shader is.
 
-use vulkano::buffer::cpu_pool::CpuBufferPool;
 use vulkano::buffer::{BufferUsage, CpuAccessibleBuffer, ImmutableBuffer};
 use vulkano::command_buffer::{AutoCommandBufferBuilder, DynamicState};
 use vulkano::descriptor::descriptor_set::PersistentDescriptorSet;
@@ -174,17 +173,20 @@ fn main() {
 
     };
 
+    let short_mode = std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() || std::env::args().len() != 1;
+
     // We now create a buffer that will store the shape of our triangle.
     let vertex_buffer = {
-        #[derive(Debug, Clone)]
+        #[derive(Default, Debug, Clone)]
         struct Vertex { position: [f32; 2] }
         vulkano::impl_vertex!(Vertex, position);
 
         let vertices: Vec<_> = [
-            Vertex { position: [-0.5, -0.25] },
-            Vertex { position: [0.0, 0.5] },
-            Vertex { position: [0.25, -0.1] }
-        ].iter().cycle().take(3 * 1024).cloned().collect();
+            Vertex { position: [-1.0, -1.0] },
+            Vertex { position: [1.0, 1.0] },
+            Vertex { position: [-1.0, 1.0] }
+        ].iter().cycle().take(3 * if short_mode { 1 } else { 10 }).cloned().collect();
+        // Only one triangle if an argument is given
 
         CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
             vertices.into_iter()).unwrap()
@@ -231,6 +233,7 @@ void main() {
     // VM memory
     float a = 0, b = 0, c = 0, d = 0;
 
+    for (uint j = 0; j < 2; j++) {
     for (uint i = 0; i < uniforms.instrs.length(); i++) {
         switch (uniforms.instrs[i].x) {
             // Set constant
@@ -477,6 +480,7 @@ void main() {
                 break;
         }
     }
+    }
 
     f_color = vec4(a, b, c, d);
 }
@@ -588,7 +592,7 @@ void main() {
     //
     // Destroying the `GpuFuture` blocks until the GPU is finished executing it. In order to avoid
     // that, we store the submission of the previous frame here.
-    let mut previous_frame_end = Box::new(sync::now(device.clone())) as Box<GpuFuture>;
+    let mut previous_frame_end = Box::new(sync::now(device.clone())) as Box<dyn GpuFuture>;
 
     let set = Arc::new(PersistentDescriptorSet::start(pipeline.clone(), 0)
         .add_buffer(uniform_buffer.clone()).unwrap()
@@ -599,7 +603,7 @@ void main() {
     let mut starttime = Instant::now();
     let mut total_frames = 0u32;
 
-    let mut perf_starttime = Instant::now();
+    let perf_starttime = Instant::now();
 
     loop {
         frames += 1;
@@ -612,7 +616,7 @@ void main() {
             starttime = Instant::now();
         }
         total_frames += 1;
-        if std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() && total_frames > 20 {
+        if short_mode && total_frames > 20 {
             break;
         }
 
@@ -764,15 +768,17 @@ void main() {
     let fps = total_frames as f32 / passed.as_secs_f32();
     println!("\nTotal: {} fps", fps);
 
-    std::thread::sleep(Duration::from_secs(12));
+    if std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() {
+        std::thread::sleep(Duration::from_secs(12));
+    }
 }
 
 /// This method is called once during initialization, then again whenever the window is resized
 fn window_size_dependent_setup(
     images: &[Arc<SwapchainImage<Window>>],
-    render_pass: Arc<RenderPassAbstract + Send + Sync>,
+    render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
     dynamic_state: &mut DynamicState
-) -> Vec<Arc<FramebufferAbstract + Send + Sync>> {
+) -> Vec<Arc<dyn FramebufferAbstract + Send + Sync>> {
     let dimensions = images[0].dimensions();
 
     let viewport = Viewport {
@@ -787,6 +793,6 @@ fn window_size_dependent_setup(
             Framebuffer::start(render_pass.clone())
                 .add(image.clone()).unwrap()
                 .build().unwrap()
-        ) as Arc<FramebufferAbstract + Send + Sync>
+        ) as Arc<dyn FramebufferAbstract + Send + Sync>
     }).collect::<Vec<_>>()
 }

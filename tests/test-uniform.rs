@@ -176,7 +176,7 @@ fn main() {
 
     // We now create a buffer that will store the shape of our triangle.
     let vertex_buffer = {
-        #[derive(Debug, Clone)]
+        #[derive(Default, Debug, Clone)]
         struct Vertex { position: [f32; 2] }
         vulkano::impl_vertex!(Vertex, position);
 
@@ -333,7 +333,7 @@ void main() {
     //
     // Destroying the `GpuFuture` blocks until the GPU is finished executing it. In order to avoid
     // that, we store the submission of the previous frame here.
-    let mut previous_frame_end = Box::new(sync::now(device.clone())) as Box<GpuFuture>;
+    let mut previous_frame_end = Box::new(sync::now(device.clone())) as Box<dyn GpuFuture>;
 
     let mut frames = 0u32;
     let mut starttime = Instant::now();
@@ -504,15 +504,17 @@ void main() {
     let fps = total_frames as f32 / passed.as_secs_f32();
     println!("\nTotal: {} fps", fps);
 
-    std::thread::sleep(Duration::from_secs(12));
+    if std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() {
+        std::thread::sleep(Duration::from_secs(12));
+    }
 }
 
 /// This method is called once during initialization, then again whenever the window is resized
 fn window_size_dependent_setup(
     images: &[Arc<SwapchainImage<Window>>],
-    render_pass: Arc<RenderPassAbstract + Send + Sync>,
+    render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
     dynamic_state: &mut DynamicState
-) -> Vec<Arc<FramebufferAbstract + Send + Sync>> {
+) -> Vec<Arc<dyn FramebufferAbstract + Send + Sync>> {
     let dimensions = images[0].dimensions();
 
     let viewport = Viewport {
@@ -527,6 +529,6 @@ fn window_size_dependent_setup(
             Framebuffer::start(render_pass.clone())
                 .add(image.clone()).unwrap()
                 .build().unwrap()
-        ) as Arc<FramebufferAbstract + Send + Sync>
+        ) as Arc<dyn FramebufferAbstract + Send + Sync>
     }).collect::<Vec<_>>()
 }
