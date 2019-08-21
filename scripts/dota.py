@@ -39,15 +39,14 @@ def run(env, remove_cache, debug, sig):
 		"+timedemoquit", "dota2-pts-1971360796",
 		"+timedemo_start", "50000",
 		"+timedemo_end", "51000",
-	], check=True, env={**env, **dict(os.environ)})
+	], check=True, env={**dict(os.environ), **env})
 
 	# Backup cache
 	os.rename(cache_path, sig_cache_path)
 
 	with open("/mnt/bigdata/Dateien/Programme/Steam/steamapps/common/dota 2 beta/game/dota/Source2Bench.csv", "r") as f:
 		# Get last line
-		for last in f:
-			pass
+		last = list(f)[-2]
 
 	p = findnth(last, ",", 1)
 	p2 = last.find(",", p + 1)

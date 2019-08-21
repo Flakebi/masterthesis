@@ -44,94 +44,30 @@ There exist static analysis tools that approximate this information~\cite{AMDSha
 Before we can start to implement more sophisticated optimizations in the compiler that rely on profiling data, we first need detailed profiling information. The focus of this thesis is to collect the necessary runtime information of GPU code, to use it for PGO. In the workflow of PGO, this is part of step one, namely inserting instrumentation when compiling code for the first time% in forever
 . The collected information from the second step can then be fed back into the compiler for use in optimizations.
 
-\subsection{Optimizations}
-The goal of this thesis is to build the instrumentation, which is used in the first step of the PGO workflow. The instrumentation collects information at runtime and is needed to perform optimizations afterwards. Before we can start collecting data, we need to know which information we need. Therefore, it is part of this thesis is to find out which information can enable optimizations and should be collected and also how they can be collected.
-
-The needed data is defined by the optimizations we want to perform in step three. In the following, we list some possible optimizations and the respectively needed profiling data. They are collected from various sources, e.g. PGO optimizations for CPUs~\cite{MicrosoftPgo} and tailored to GPUs, as there are some peculiarities which have to be taken into account. Some described optimizations are specific to the current architecture of GPUs and have no close counterpart on CPUs.
-
-\subsubsection{Improve linearization}
-\paragraph{Needed data} Branch probabilities
-\paragraph{Description} As described in the introduction, moving seldom taken branches after the return instruction improves the performance.
-\paragraph{Background} This optimization is implemented in LLVM~\cite{llvmLinearization}. To avoid generating worse code, it is only applied when profiling data is available or the compiler assigned a rather high probability to the hot branch.
-\paragraph{Example}\ \\%TODO Use gpu instructions
-\begin{minipage}{.47\textwidth}
-\begin{lstlisting}[caption={Linearization -- unoptimized},frame=tlrb,language={[x86masm]Assembler}]
-cmp a, b
-jle else
-; then-branch
-jmp endif
-else:
-; else-branch
-endif:
-ret
-\end{lstlisting}
-\end{minipage}\hfill
-\begin{minipage}{.47\textwidth}
-\begin{lstlisting}[caption={Linearization -- optimized},frame=tlrb,language={[x86masm]Assembler}]
-cmp a, b
-jle else
-; then-branch
-endif:
-ret    ; no jump if the condition is true
-else:
-; else-branch
-jmp endif
-\end{lstlisting}
-\end{minipage}
-
-% TODO
-\subsubsection{Prefetch Textures from Branches}
-\paragraph{Needed data} Branch probabilities
-\paragraph{Description} Texture fetches that happen in branches are sometimes moved before the branch by the compiler -- so executed unconditionally. This has the effect that the shader can do some work and then use the loaded texture value when it is available. The optimization speeds up the execution if the branch condition evaluates to true. However, if the condition evaluates to false, it will degrade performance because the GPU unnecessarily fetches memory.
-\paragraph{Background} Prefetching textures is already done but without any information about how often a texture is needed.
-\paragraph{Example}
-
-\subsubsection{Improve register allocation and occupancy}
-\paragraph{Needed data} Branch probabilities
-\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{SMT} fashion. If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same compute unit because the register memory is not large enough to hold the registers for more instances at the same time.
-Therefore, reducing the registers that a shader needs or spilling registers into memory can improve performance. However, we should not spill registers in the hot path, as this will degrade performance again.
-Branch probabilities can provide the information, where we can spill registers and where not.
-\paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use less registers is never a performance gain.
-\paragraph{Example}
-
-\subsubsection{Value Profiling}
-\paragraph{Needed data} Variable value distribution
-\paragraph{Description} If a variable often has the same value, we can introduce a branch and apply constant propagation to provide a fast path. This increases the code size as parts of the code are duplicated but can speed up the shader.
-\paragraph{Background} The concept of value profiling exists since 1997~\cite{Calder1997}. But as there is no detailed profiling for GPUs so far, this was only done for CPUs.
-\paragraph{Example} Blend multiple textures based on a material texture which mostly contains 0. So we make a branch for != 0 and do texture fetches/computations only there. (Combine newly created branches with branch probabilities?)
-% Throw away transparent blocks on textures?
-
-\subsubsection{Detect Uniform Computations}
-\paragraph{Needed data} Variable value distribution on a SIMD unit
-\paragraph{Description} If we do a computation or memory fetch on the same value for every lane on a SIMD unit, i.e. it is uniform, the code can be optimized to be executed only once by the scalar unit instead of the vector unit.
-\paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution. Compared to value profiling, we do not need to store used values but only if a value was uniform or not. Using scalar instructions yields great benefits as described in this paper by Chen~\cite{Chen2016}.
-\paragraph{Example} Address values are the same on a SIMD unit, so we fetch memory with the scalar unit.
-
-\subsubsection{Skip branches}
-\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
-\paragraph{Description} Only insert the branch skip instruction for the scalar unit if often all or no SIMD lanes take the branch. Otherwise, do not insert it as both branches are executed anyway.
-\paragraph{Background} This optimization is an example which has no counterpart for CPUs. CPUs do not have the ability to run SIMD instructions only on a part of the lanes. This is a special case of detecting uniform computations where the question is if the condition variable is uniform or not.
-\paragraph{Example}
-
 \subsection{Notation}
 \label{sub:notation}
 There exist quite a few different notations for the logical and physical parts of a GPU. Multiple vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
 
-Throughout this paper, we will use the term SIMD lane for a single work-item. As a wavefront (AMD) or warp (NVIDIA) is run on a SIMD unit, we will use the expression SIMD unit.
+Throughout this paper, we will use the term \emph{SIMD lane} for a single work-item. As a wavefront (AMD) or warp (NVIDIA) is run on a SIMD unit, we will use the expression \emph{SIMD unit}.
+
+With respect to profile-guided optimizations, we will use the word \emph{benchmark} to label an automated, scripted execution of an application which is used to gather profiling data.
 
 %We will use the term \gls{cu} used by OpenCL and AMD, called \gls{sm} by NVIDIA.
 % cite https://community.khronos.org/t/relation-between-cuda-cores-and-compute-units/4772/2
 
 \subsection{Contributions}
 \label{sub:contributions}
-This work contributes instrumentations for Vulkan on AMD GPUs in the AMDVLK driver. We use the instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
+This work contributes several instrumentations for Vulkan on AMD GPUs in the AMDVLK driver. We use the instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
 
-One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{BB} is executed. This allows us to detect hot paths in shaders and optimize them more aggressively.
+One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{bb} is executed. This allows the compiler to detect hot paths in shaders and optimize them more aggressively. We measure and evalute the effect of optimizations in LLVM when accurate BB counts are available.
+
+Accurate counters also allow detecting unused basic blocks, that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code have an effect on the register allocation of shaders.
 
 A second instrumentation counts how often certain variables are uniform or divergent at runtime. A uniform variable has the same value on all active lanes on a SIMD unit, which permits optimizations that are impossible for divergent variables.
+The uniformity is important for branches because the GPU might need to execute both branches on a SIMD unit and needs to run them sequentially, one after the other. We present statistics about the uniformity of branches in games.
+Additionally, our instrumentation allows us to analyze the uniformity of memory loads, which we will also present.
 
-For some popular games, we use the developed instrumentations and present statistics about unused shader code and the uniformity of conditions. We measure and evalute the effect of optimizations in LLVM when accurate BB counts are available. To test the impact of compiled but unused code, we measure the effect when removing code that gets never executed in the selected benchmarks.
+To accomplish our goals, we reuse the existing infrastructure in LLVM for profile-guided optimizations. We extend and modify LLVM and the AMD Linux driver to support our instrumentations and use the collected data.
+To support PGO in the driver, we fixed various bugs in both, the hardware management layer of the driver and in LLVM, and implemented loading \gls{elf} sections onto the GPU and applying relocations to the code.
 
-To accomplish our goals, we reuse the existing infrastructure in LLVM for profile-guided optimizations. We extend and modify LLVM and the AMD driver to support our instrumentations and use the collected data.
-
-We discuss the effect of inserting instrumentation counters on the SIMD unit level\footnote{After structurizing the \gls{cfg} as explained in \cref{sub:structurize}} or per lane.
+Finally, we discuss the effect of inserting instrumentation counters on the SIMD unit level\footnote{After structurizing the \gls{cfg} as explained in \cref{sub:structurize}} or per lane.

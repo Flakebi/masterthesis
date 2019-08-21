@@ -173,7 +173,7 @@ fn main() {
 
     };
 
-    let short_mode = std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() || std::env::args().len() != 1;
+    let short_mode = (std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() || std::env::args().len() == 2) && std::env::args().len() != 3;
 
     // We now create a buffer that will store the shape of our triangle.
     let vertex_buffer = {
@@ -768,7 +768,7 @@ void main() {
     let fps = total_frames as f32 / passed.as_secs_f32();
     println!("\nTotal: {} fps", fps);
 
-    if std::env::var("AMDVLK_PROFILE_INSTR_GEN").is_ok() {
+    if short_mode {
         std::thread::sleep(Duration::from_secs(12));
     }
 }

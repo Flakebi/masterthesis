@@ -3,18 +3,33 @@
 \begin{center}
 \begin{minipage}{12.5cm}
 \section*{Abstract}
-TODO
-%GPUs are getting used for more and more diverse purposes: Games, High Performance Computing, even offloading computations in spreadsheets or databases.
+% TODO shorter
+Today, GPUs are getting used various fields for an increasing number of diverse purposes. They are used in computer games for the graphics, in high-performance computing, even in spreadsheets or databases to offload computations from the CPU.
+One of the parts which enable this development are compilers. They are able to compile code from various shader and general purpose languages into code which can be run on a GPU.
+Up to know, the GPU compilers have a shortcoming when it comes to optimizations. They have to decide which code gets executed more often than other code and is more important for optimizations.
+The knowledge base for this decision and others is only based on heuristics and may not be correct thus giving away potential for optimizations.
 
-%Something GPU optimization \dots compiler has to guess hot branches \dots on CPUs common to get data with profiling \dots many tools for GPU profiling on the kernel/shader level \dots get used memory bandwidth, etc.
+On CPUs, it got common to get precise runtime data by profiling and gave that information to the compiler. This technique is called profile-guided optimizations. It is not yet used for GPUs until now.
+While there exist many tools that assist with profiling on GPUs, most of them look at the performance only at the level of single kernel or shader executions and supply general metrics like used memory bandwidth, etc.
+There are very few tools available which provide insight into what happens inside a shader.
 
-%There is however a lot less tooling available to get instruction level data. E.g. how often a branch is executed.
-
-%Plan: Get that data, feed it back into the compiler to get accurate data optimizations. Tl;dr get PGO on GPUs.
-
-%This work focuses on profiling GPU kernels to generate the data which will later be needed for the optimizations.
+This work focuses on profiling GPU programs to generate the data which will later be needed for optimizations.
 
 %Actual results.
+Basic block counting (implemented in LLVM, needed adjustments)
+-> unused code statistics
+%code size statistics (#bbs)
+Analyze register usage (-> histogram: normal, PGO, remove)
+
+Remove unused code
+
+Condition/Branch uniformity
+
+Uniformity
+
+discussion: PGO instr and use before/after structurize
+(implementation: perf optimization with per-wave counters)
+Mark export instruction as convergent and don’t apply ControlHeightReduction
 
 %\pagenumbering{arabic}\setcounter{page}{1}
 %\begin{abstract}

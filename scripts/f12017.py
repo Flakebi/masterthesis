@@ -1,6 +1,7 @@
 import io
 import os
 from os import path
+import random
 import shutil
 import subprocess
 
@@ -13,6 +14,9 @@ def run(env, remove_cache, debug, sig):
 		args = ["lldb", "/home/sebi/Masterarbeit/repo/scripts/f12017_start.sh", "--"]
 	else:
 		args = ["/home/sebi/Masterarbeit/repo/scripts/f12017_start.sh"]
+
+	# if remove_cache:
+	env["AMDVLK_VERSION_XOR"] = str(random.randint(0, 65535))
 
 	with open("/tmp/steamgameenv", "w") as f:
 		for k, v in env.items():

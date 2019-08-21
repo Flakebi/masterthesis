@@ -26,6 +26,152 @@ As the AMD Vulkan driver is based on LLVM and developers already know this workf
 When using PGO with \texttt{clang}, we use command line arguments to tell LLVM which options we want to use. When invoking the compiler through the Vulkan API, we cannot use command line arguments.
 To keep the usage and implementation of options simple, we use environment variables to pass filenames and other options.
 
+\subsection{Optimizations}
+The goal of this thesis is to build the instrumentation, which is used in the first step of the PGO workflow. The instrumentation collects information at runtime and is needed to perform optimizations afterwards. Before we can start collecting data, we need to know which information we need. Therefore, it is part of this thesis is to find out which information can enable optimizations and should be collected and also how they can be collected.
+
+The needed data is defined by the optimizations we want to perform in step three. In the following, we list some possible optimizations and the respectively needed profiling data. They are collected from various sources, e.g. PGO optimizations for CPUs~\cite{MicrosoftPgo} and tailored to GPUs, as there are some peculiarities which have to be taken into account. Some described optimizations are specific to the current architecture of GPUs and have no close counterpart on CPUs.
+
+\subsubsection{Improve linearization}
+\paragraph{Needed data} Branch probabilities
+\paragraph{Description} As described in the introduction, moving seldom taken branches after the return instruction improves the performance.
+\paragraph{Background} This optimization is implemented in LLVM~\cite{llvmLinearization}. To avoid generating worse code, it is only applied when profiling data is available or the compiler assigned a very high probability to the hot branch.
+\paragraph{Example}\ \\
+\begin{minipage}{.47\textwidth}
+	\begin{lstlisting}[caption={Linearization --- unoptimized},frame=tlrb,language={[amdgpu]Assembler}]
+	; v0 == 0
+	v_cmp_neq_f32_e32 vcc, 0, v0
+	s_and_saveexec_b64 s[0:1], vcc
+	s_cbranch_execz else
+	; then-branch
+	s_branch endif
+else:
+	; else-branch
+endif:
+	s_endpgm
+	\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.47\textwidth}
+	\begin{lstlisting}[caption={Linearization --- optimized},frame=tlrb,language={[amdgpu]Assembler}]
+	v_cmp_neq_f32_e32 vcc, 0, v0
+	s_and_saveexec_b64 s[0:1], vcc
+	s_cbranch_execz else
+	; then-branch
+endif:
+	s_endpgm    ; no jump if the condition is true
+else:
+	; else-branch
+	s_branch endif
+	\end{lstlisting}
+\end{minipage}
+
+\subsubsection{Hoist Texture Loads from Branches}
+\paragraph{Needed data} Branch probabilities
+\paragraph{Description} Texture fetches that happen in branches are sometimes moved before the branch by the compiler to be executed unconditionally. This has the effect that while we wait for the texture content to be loaded from memory, the shader can do computational work and does not have to wait. The optimization speeds up the execution if the branch condition for the texture fetch evaluates to true. However, if the condition evaluates to false, it will degrade performance because the GPU unnecessarily fetches memory and occupies bandwidth.
+% TODO Cite something?
+\paragraph{Background} Some GPU drivers are hoisting texture fetches out of branches, with guessing the probability that a branch is taken.
+\paragraph{Example}\ \\
+\begin{minipage}{.47\textwidth}
+	\begin{lstlisting}[caption={Load Hoisting --- unoptimized},frame=tlrb,language={[amdgpu]Assembler}]
+	v_cmp_neq_f32_e32 vcc, 0, v0
+	; Set EXEC mask to cmp result
+	s_and_saveexec_b64 s[0:1], vcc
+	; Skip branch if no lane is active
+	s_cbranch_execz endif
+	; Load from texture
+	image_sample v[0:3], v[5:6], s[0:7], s[12:15] dmask:0xf
+	; Wait until texture is loaded
+	s_waitcnt vmcnt(0)
+endif:
+	s_or_b64 exec, exec, s[0:1]
+	\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.47\textwidth}
+	\begin{lstlisting}[caption={Load Hoisting --- optimized},frame=tlrb,language={[amdgpu]Assembler}]
+	image_sample v[0:3], v[5:6], s[0:7], s[12:15] dmask:0xf
+	v_cmp_neq_f32_e32 vcc, 0, v0
+	s_and_saveexec_b64 s[0:1], vcc
+	s_cbranch_execz endif
+	s_waitcnt vmcnt(0)
+endif:
+	s_or_b64 exec, exec, s[0:1]
+	\end{lstlisting}
+\end{minipage}
+
+\subsubsection{Improve register allocation and occupancy}
+\paragraph{Needed data} Branch probabilities
+\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{SMT} fashion. If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same compute unit because the register memory is not large enough to hold the registers for more instances at the same time.
+Therefore, reducing the registers that a shader needs or spilling registers which are rarely needed into memory can improve performance. However, we should not spill registers in the hot path, as this will degrade performance.
+Branch probabilities can provide the information, where we can spill registers and where not.
+\paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use fewer registers is never a performance gain.
+\paragraph{Example} For example a game has a single shader for most of the objects that get drawn. This shader implements all material properties though not all properties are active for each object.
+One of the effects --- e.g. subsurface scattering --- needs a lot of registers but is enabled for few objects only. The high maximum number of used registers forces a low occupancy.
+In this case, spilling registers in the subsurface scattering implementation leads to lower register usage, higher occupancy and improves the performance.
+
+\subsubsection{Value Profiling}
+\paragraph{Needed data} Variable value distribution
+\paragraph{Description} If a variable has a constant value in most executions, we can introduce a branch and apply constant propagation to provide a fast path. This increases the code size, as parts of the code are duplicated, but can speed up the shader for the common case.
+\paragraph{Background} The concept of value profiling exists since 1997~\cite{Calder1997}. But there is no detailed profiling for GPUs so far, so this is only done for CPUs. In LLVM, value profiling is used to inline e.g. \texttt{memcpy} calls when the size of the copied memory region is small enough.
+\paragraph{Example} A shader may compute textures for multiple material effects and blend them together in the end by using a material texture with weights for every effect.
+If an effect is used seldom, its weight is often zero. We should skip the computation of the effect in this case.\ \\
+\begin{minipage}{.47\textwidth}
+	\begin{lstlisting}[caption={Value Profiling --- unoptimized},frame=tlrb,language={[amdgpu]Assembler}]
+	v_mov_b32_e32 v1, 0
+	; Lots of computations, result is in v1
+	; The weight for the effect is in v0
+	v_mul_f32_e32 v1, v1, v0
+	\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.47\textwidth}
+	\begin{lstlisting}[caption={Value Profiling --- optimized},frame=tlrb,language={[amdgpu]Assembler}]
+	v_mov_b32_e32 v1, 0
+	; Skip if v0 is zero
+	v_cmp_eq_f32_e32 vcc, 0, v0
+	s_and_saveexec_b64 s[0:1], vcc
+	s_cbranch_execz endif
+	; Lots of computations
+	v_mul_f32_e32 v1, v1, v0
+endif:
+	s_or_b64 exec, exec, s[0:1]
+	\end{lstlisting}
+\end{minipage}
+
+\subsubsection{Detect Uniform Computations}
+\paragraph{Needed data} Variable value distribution on a SIMD unit
+\paragraph{Description} If we do a computation or memory fetch on the same value for every lane on a SIMD unit, it is uniform. Uniform code can be optimized to be executed only once by the scalar unit instead of the vector unit.
+\paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution. Compared to value profiling, we do not need to store used values but only if a value was uniform or not. Using scalar instructions yields great benefits as described in a paper by Chen~\cite{Chen2016}.
+\paragraph{Example} If a shader loads an element from a uniform buffer, and we know through instrumentation that the offset into the uniform buffer is usually the same on all SIMD lanes, we can optimize that load.
+The compiler can insert a branch which checks if the offset is uniform at runtime. If it is uniform, the scalar unit loads the element from the uniform buffer.
+If the offset is not uniform at runtime, we fall back to the original, non-optimized variant.
+%\ \\
+%\begin{minipage}{.47\textwidth}
+%	\begin{lstlisting}[caption={Uniformity --- unoptimized},frame=tlrb,language={[amdgpu]Assembler}]
+%	; Use v0 as index
+%	buffer_store_dword v1, v0, s[0:3], 0 offen
+%	\end{lstlisting}
+%\end{minipage}\hfill
+%\begin{minipage}{.47\textwidth}
+%	\begin{lstlisting}[caption={Uniformity --- optimized},frame=tlrb,language={[amdgpu]Assembler}]
+%	v_cmp_eq_f32_e32 vcc, 320, v0
+%	s_and_saveexec_b64 s[0:1], vcc
+%	s_cbranch_execz else
+%	; Use a static offset
+%	buffer_store_dword v1, off, s[0:3], 0 offset:320
+%	s_branch endif
+%else:
+%	; Fall back to the original non-uniform case
+%	buffer_store_dword v1, v0, s[0:3], 0 offen
+%	; ...
+%endif:
+%	s_or_b64 exec, exec, s[0:1]
+%	\end{lstlisting}
+%\end{minipage}
+
+\subsubsection{Skip branches}
+\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
+\paragraph{Description} If the compiler encounters a non-uniform branch, it inserts code to set the EXEC mask and a jump which skips the branch on the SIMD unit if no lane wants to execute it. If the compiler knows that the branch will be executed (almost) always, it can omit the skip-jump and save an instruction.
+\paragraph{Background} This optimization is an example which has no counterpart for CPUs. CPUs do not have the ability to run SIMD instructions only on a part of the lanes. This is a special case of detecting uniform computations where we are interested in the uniformity of the branch-condition.
+\paragraph{Example} This optimization saves only a single instruction. An example where this can be useful nonetheless is in a hot loop where optimizing away a single instruction has a measurable impact.
+
 \subsection{Storing Data}
 \label{sub:save-design}
 On CPUs, LLVM generates code for writing the collected data into a file.
