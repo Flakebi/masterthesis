@@ -28,18 +28,18 @@ def run_game(name, config, remove_cache=True, debug=False):
 		print("WARNING PGO options have no meaning when PGO is not in use")
 
 	sig = config.get_signature()
-	#env = dict(os.environ)
 	env = {}
 	env["VK_ICD_FILENAMES"] = "/mnt/newvms/Masterarbeit/vulkandriver/drivers/amd_icd64.json"
 	pgo_config = copy(config)
 	pgo_config.gen = False
 	pgo_config.use = False
+	pgo_config.remove = False
+	pgo_config.analysis = False
 	pgo_sig = pgo_config.get_signature()
 	pgo_folder = f"/home/sebi/Downloads/pgo/{name}-{pgo_sig}"
 	if config.gen:
 		# Remove pgo folder and recreate
 		shutil.rmtree(pgo_folder, ignore_errors=True)
-		#os.makedirs(pgo_folder, exist_ok=True)
 		os.makedirs(pgo_folder)
 		env["AMDVLK_PROFILE_INSTR_GEN"] = f"{pgo_folder}/Pipeline_%i_%m.profraw"
 	if config.use:

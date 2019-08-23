@@ -68,6 +68,8 @@ The compilation is done now, the next steps are loading and executing the code.
 	\item The GPU runs the code
 \end{enumerate}
 
+% TODO Explain occupancy
+
 \subsection{PGO in LLVM}
 \label{sub:pgo-background}
 The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM, e.g. the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler and instrumentation. We will concentrate on the instrumenting profiler in the following.

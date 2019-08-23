@@ -217,3 +217,17 @@
 		}
 	}
 }
+
+
+\begin{luacode*}
+function runtexcommand(args)
+	local handle = io.popen("../scripts/tex.py " .. args)
+	local result = handle:read("*a")
+	handle:close()
+	-- Replace newlines
+	for line in unicode.utf8.gmatch(result, "[^\r\n]+") do
+		tex.sprint(line)
+	end
+end
+\end{luacode*}
+\newcommand\runtex[1]{\directlua{runtexcommand([[#1]])}}

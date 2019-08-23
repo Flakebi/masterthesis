@@ -1,6 +1,8 @@
 # 2019-08-12 – 2019-08-18
+- Add discussion about per lane vs per unit
+- Add diagram for overhead
 - Add examples for possible optimizations in design
-- Try to disable shader cache, maybe it worked?
+- Disable shader cache for Feral games
 - Try to run game benchmarks
 	- **Ashes of the Singularity: Escalation**: Working
 	- **Dota 2**: Working

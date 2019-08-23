@@ -9,9 +9,11 @@ It should have no impact when measuring branch probabilities, as the taken branc
 The basic block counters influence order of basic blocks -> No impact on performance on most shaders?
 Marks pixel shaders as hot and vertex shaders as unlikely -> No impact on performance.
 
-\subsection{Shader Size}
-\label{sub:size}
+\subsection{Basic Block Counters}
+\label{sub:evaluation_counters}
+% TODO diagram
 Shaders are small programs compared to CPU programs, more like a single function. This means the number of basic blocks in a shader is low as seen in \cref{dia:shader_bbs_dota}.
+LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is shown in \dots. The optimizations do not change the performance of the selected games significantly.
 
 \begin{figure}
 \pgfplotsset{width=\textwidth}
@@ -62,6 +64,9 @@ Shaders are small programs compared to CPU programs, more like a single function
 \end{minipage}
 \end{figure}
 
+\subsection{Unused code}
+\label{sub:evaluation_unused}
+
 \subsection{Overhead}
 \label{sub:overhead}
 To find hot paths, the instrumentation inserts counters into some basic blocks of a program. The counters introduce an overhead, compared to a non-instrumented version of the code.
@@ -70,8 +75,19 @@ But the code will run slower. In the case of a game, we will observe fewer frame
 If the benchmark, that we run with PGO instrumentation, runs for a fixed time, we will get lower basic block frequencies for fewer frames per second.
 Therefore, the measured counters may be less than the actual frequencies that we try to measure.
 
+We measured the overhead for two different games in different configurations: Dota 2 and Ashes of the Singularity. The baseline in \cref{dia:overhead} is a normal run of the game with no counters.
+The first tested configuration uses normal add instructions (i.e. no atomics) and increments by one per SIMD unit.
+The second and third variant use atomic counters, either incrementing by one on each SIMD lane or once per unit.
+All instrumentation was inserted after structurizing the CFG.
+
+% TODO percentage
+As expected, incrementing per lane needs the most time. An atomic add causes less overhead for Dota 2 than the non-atomic version.
+The reason is that the non-atomic increment needs a load and a store operation where the atomic version needs only a single memory transaction. The actual addition is computed inside the L2 cache for atomics.
+For Ashes of the Singularity, we cannot see much of a difference in performance. The per-lane variant is significantly slower but only by \dots +- percent.
+
 \begin{figure}
-\pgfplotsset{width=\textwidth*0.75}
+\centering
+\pgfplotsset{width=0.75\textwidth}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -82,36 +98,55 @@ Therefore, the measured counters may be less than the actual frequencies that we
 	xtick=data,
 	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
 	ymin=0,
-	ymax=199,
+	ymax=210,
 	grid=both,
 	nodes near coords,
 	every node near coord/.append style={rotate=90, anchor=west},
 	bar width=0.5cm,
+	legend style={at={(1,1)},anchor=north east},
 ]
 
 \addplot [
-	fill=color0,
-	error bars/.cd,y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-non-atomic-wave-late.txt};
+fill=color0,
+error bars/.cd,
+y dir=both,y explicit
+] table[header=false, y error index=2] {data/overhead-none.txt};
 
 \addplot [
 	fill=color1,
-	error bars/.cd,y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-late.txt};
+	error bars/.cd,
+y dir=both,y explicit
+] table[header=false, y error index=2] {data/overhead-non-atomic-wave-late.txt};
 
 \addplot [
 	fill=color2,
-	error bars/.cd,y dir=both,y explicit
+	error bars/.cd,
+y dir=both,y explicit
+] table[header=false, y error index=2] {data/overhead-late.txt};
+
+\addplot [
+	fill=color3,
+	error bars/.cd,
+y dir=both,y explicit
 ] table[header=false, y error index=2] {data/overhead-wave-late.txt};
 
-\legend{Non-atomic per-wave,Atomic,Atomic per-wave}
+\legend{No counters,Non-atomic per SIMD unit,Atomic,Atomic per SIMD unit}
 \end{axis}
 \end{tikzpicture}
 \captionof{figure}{Overhead of BB counters}
 \label{dia:overhead}
 \end{figure}
+% TODO Why ashes? Code size / BB-count
 
-It may be necessary to decrease the overhead of basic block counters. For example to use the instrumentation in production environments where high overheads are not acceptable.
+\begin{figure}
+\centering
+\runtex{overhead}
+\captionof{table}{Overhead of BB counters}
+\label{dia:overhead_tab}
+\end{figure}
+
+
+In some cases, it may be necessary to decrease the overhead of basic block counters. For example to use the instrumentation in production environments where high overheads are not acceptable.
 Sometimes, the overhead is high enough to trigger timeouts in the GPU driver, leading to game crashes. This is the case for the Infiltrator demo project of the Unreal Engine.
 
 A simple way to decrease the overhead is to switch from atomic counters to non-atomic counting. This is enough to let e.g. the Infiltrator demo start, however it comes with a drawback. Shaders are executed highly parallel, so many instances of a shader will simultaneously access the same memory location of a counter.

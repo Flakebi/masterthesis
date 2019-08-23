@@ -42,6 +42,111 @@ class RunResult:
 	def __init__(self, frame_time):
 		self.frame_time = frame_time
 
+class Value:
+	def __init__(self, val, error):
+		self.val = val
+		self.error = error
+
+	def __add__(self, other):
+		"""Propagate errors via quadratic addition"""
+		if isinstance(other, Value):
+			return Value(self.val + other.val, sqrt(self.error**2 + other.error**2))
+		else:
+			return Value(self.val + other, self.error)
+
+	def __sub__(self, other):
+		if isinstance(other, Value):
+			return Value(self.val - other.val, sqrt(self.error**2 + other.error**2))
+		else:
+			return Value(self.val - other, self.error)
+
+	def __mul__(self, other):
+		if isinstance(other, Value):
+			return Value(self.val * other.val, sqrt((self.error * other.val)**2
+				+ (other.error * self.val)**2))
+		else:
+			return Value(self.val * other, self.error * other)
+
+	def __truediv__(self, other):
+		if isinstance(other, Value):
+			return Value(self.val / other.val, sqrt((self.error / other.val)**2
+				+ (other.error * self.val / other.val**2)**2))
+		else:
+			return Value(self.val / other, self.error / other)
+
+	def get_val_error(self):
+		error = 1
+		while error > self.error:
+			error /= 10
+		while error <= self.error:
+			error *= 10
+
+		# error is      0.00100
+		# self.error is 0.000xx
+
+		# 2 digits for the error if it starts with 1 or 2, 1 digit otherwise
+		digits = 1
+
+		# Check if we need to round up
+		if self.error > error - error / 10:
+			digits = 2
+			# error is correct
+		else:
+			error /= 10
+			# We have two digits up to <= 0.00029
+			if self.error <= 2.9 * error:
+				digits = 2
+
+		# print(f"{error}, {digits}")
+
+		val_digits = 0
+		if digits == 2:
+			error /= 10
+
+		if error >= 10 and digits == 2:
+			digits = 0
+		elif error >= 1:
+			digits -= 1
+
+		i = error
+		while i < 1:
+			i *= 10
+			val_digits += 1
+
+		# print(f"{digits}, {val_digits}")
+
+		# Ceil error and rount value
+		value = round(self.val / error) * error
+		error = ceil(self.error / error) * error
+
+		val = "{0:.{1}f}".format(value, val_digits)
+		error = "{0:.{1}f}".format(error, val_digits)
+		return val, error
+
+	def __str__(self):
+		val, error = self.get_val_error()
+		return f"{val} ± {error}"
+
+	def tex_str(self, unit):
+		val, error = self.get_val_error()
+		return f"\\SI{{{val} \pm {error}}}{{{unit}}}"
+
+	def avg(vals):
+		return Value(avg(vals), deviationStudentT(vals))
+
+	def test_error():
+		assert str(Value(1, 1)) == "1.0 ± 1.0"
+		assert str(Value(1, 0.1)) == "1.00 ± 0.10"
+		assert str(Value(1, 0.2)) == "1.00 ± 0.20"
+		assert str(Value(1, 0.29)) == "1.00 ± 0.29"
+		assert str(Value(1, 0.291)) == "1.0 ± 0.3"
+		assert str(Value(0.124, 0.0291)) == "0.12 ± 0.03"
+		assert str(Value(0.1251, 0.0291)) == "0.13 ± 0.03"
+
+		assert str(Value(2, 3)) == "2 ± 3"
+		assert str(Value(20, 3)) == "20 ± 3"
+		assert str(Value(20, 9.1)) == "20 ± 10"
+
 def avg(xs):
 	return sum(xs) / len(xs)
 

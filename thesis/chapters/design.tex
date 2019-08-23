@@ -99,7 +99,7 @@ endif:
 
 \subsubsection{Improve register allocation and occupancy}
 \paragraph{Needed data} Branch probabilities
-\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{SMT} fashion. If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same compute unit because the register memory is not large enough to hold the registers for more instances at the same time.
+\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{smt} fashion. If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same compute unit because the register memory is not large enough to hold the registers for more instances at the same time.
 Therefore, reducing the registers that a shader needs or spilling registers which are rarely needed into memory can improve performance. However, we should not spill registers in the hot path, as this will degrade performance.
 Branch probabilities can provide the information, where we can spill registers and where not.
 \paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use fewer registers is never a performance gain.
@@ -205,6 +205,9 @@ To improve that situation, we can spill some registers to (scratch) memory and i
 Basic block counters let us decide which parts of the code are executed seldom or not at all, so we can spill registers there.
 To estimate the possible performance improvement without fully implementing this optimization, we remove all parts of the shader code that are never executed and measure the impact on used registers and performance.
 We cannot use this strategy in a production driver because code that is not executed in a PGO benchmark scene is not necessarily dead code. However, this test can provide us valuable information if such an optimization can be worth the effort.
+
+\subsection{Removing Unused Code}
+\label{sub:design_unused}
 
 \subsection{Uniform Variables}
 \label{sub:uniformity}
