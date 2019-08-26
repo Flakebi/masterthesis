@@ -54,6 +54,8 @@ def run_game(name, config, remove_cache=True, debug=False):
 		env["AMDVLK_PROFILE_ANALYSIS"] = "1"
 	if config.remove:
 		env["AMDVLK_PROFILE_REMOVE"] = "1"
+	if config.non_atomic:
+		env["AMDVLK_PROFILE_NON_ATOMIC"] = "1"
 
 	if name == "test":
 		subprocess.run("env", check=True, env=env, shell=True)
@@ -379,6 +381,8 @@ def get_config(options):
 			config.uniform = True
 		elif o == "remove":
 			config.remove = True
+		elif o == "non_atomic":
+			config.non_atomic = True
 		elif o == "analysis":
 			config.analysis = True
 		else:
