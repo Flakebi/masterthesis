@@ -6,7 +6,7 @@
 \label{sub:discussion_structurize}
 The \texttt{StructurizeCFG} pass in the LLVM compiler pipeline is a turning point. Before, we look at everything from the perspective of a single thread (or lane).
 After this pass, the control-flow graph contains the per SIMD unit view, where an if-else was before, both branches can now be executed after each other.
-It is important to note that the per unit perspective only applies to the CFG after this pass. All instructions stay the same and exhibit the per lane view.
+It is important to note that the per unit perspective only applies to the CFG after this pass. All instructions apart from branch instructions stay the same and exhibit the per lane view.
 
 For profile-guided optimizations, we have to decide if we want to instrument the CFG before or after structurization. In the case of basic block counters, this will lead to different results.
 Before structurization, it is impossible to run through both branches of an if-else construct. After structurization, it is still impossible \emph{per lane}, but it is possible in the \emph{per unit} perspective.
@@ -27,7 +27,7 @@ The advantage of a per lane instrumentation is simplicity. The \texttt{PassManag
 To use per unit instrumentation, we need to add passes manually after structurization and cannot use the \texttt{PassManagerBuilder}.
 Additionally, we need to change the PGO instrumentation pass that the increment instruction is only run on one lane and not on all lanes.
 An advantage of the per unit view is that it is more similar to the code that gets executed on the hardware in the end.
-If we compare two basic blocks, one always gets run by the whole unit, for the other only a single lane is active.
+If we compare two basic blocks, one always gets run by the whole unit, for the other only a single lane is active, e.g. to aggregate a result over the whole unit.
 When we use per lane counting, the first basic block will be weighted a lot more important than the second one.
 Per unit counting provides a more accurate view, both blocks are executed the same amount of times, so they are equally important. The amount of active lanes does not matter.
 

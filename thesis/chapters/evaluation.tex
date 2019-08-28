@@ -66,6 +66,10 @@ LLVM uses the counters e.g. for linearization. A performance comparison using th
 
 \subsection{Unused code}
 \label{sub:evaluation_unused}
+We test the effect of removing unused code with a small sample program which runs a bytecode virtual machine in a shader with one large switch-case statement.
+The bytecode computes the final fragment color and in our example only uses a single bytecode instruction out of 71 possible instructions.
+Using PGO, we detect that all other instructions are never executed and in the optimized shader version we remove all these basic blocks.
+This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has a lot less basic blocks than before.
 
 \subsection{Overhead}
 \label{sub:overhead}
@@ -75,15 +79,14 @@ But the code will run slower. In the case of a game, we will observe fewer frame
 If the benchmark, that we run with PGO instrumentation, runs for a fixed time, we will get lower basic block frequencies for fewer frames per second.
 Therefore, the measured counters may be less than the actual frequencies that we try to measure.
 
-We measured the overhead for two different games in different configurations: Dota 2 and Ashes of the Singularity. The baseline in \cref{dia:overhead} is a normal run of the game with no counters.
+We measured the overhead for two different games in different configurations: Dota 2 and Ashes of the Singularity. The baseline in \cref{dia:overhead} and \cref{tab:overhead} is a normal run of the game with no counters.
 The first tested configuration uses normal add instructions (i.e. no atomics) and increments by one per SIMD unit.
 The second and third variant use atomic counters, either incrementing by one on each SIMD lane or once per unit.
 All instrumentation was inserted after structurizing the CFG.
 
-% TODO percentage
 As expected, incrementing per lane needs the most time. An atomic add causes less overhead for Dota 2 than the non-atomic version.
 The reason is that the non-atomic increment needs a load and a store operation where the atomic version needs only a single memory transaction. The actual addition is computed inside the L2 cache for atomics.
-For Ashes of the Singularity, we cannot see much of a difference in performance. The per-lane variant is significantly slower but only by \dots +- percent.
+For Ashes of the Singularity, we cannot see much of a difference in performance. The per-lane variant is significantly slower but only by \SI{0.25 \pm 0.06}{\percent}.
 
 \begin{figure}
 \centering
@@ -142,7 +145,7 @@ y dir=both,y explicit
 \centering
 \runtex{overhead}
 \captionof{table}{Overhead of BB counters}
-\label{dia:overhead_tab}
+\label{tab:overhead}
 \end{figure}
 
 

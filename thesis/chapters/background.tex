@@ -68,18 +68,32 @@ The compilation is done now, the next steps are loading and executing the code.
 	\item The GPU runs the code
 \end{enumerate}
 
-% TODO Explain occupancy
+When executing a shader, GPUs wait a lot of time for memory. To deliver a good performance, they employ multiple techniques to hide the memory latency and keep the arithmetic cores busy.
+Like CPUs, GPUs use \gls{smt} to execute other code while waiting for memory in one program.
+The difference to CPUs is that GPUs can switch between programs a lot faster. A single cycle is enough for a context switch.
+Additionally, the amount of programs sleeping and waiting for memory concurrently is higher than on CPUs.
+While CPUs typically run two programs simultaneously, GPUs can have up to ten programs on a single SIMD unit~\cite{Aaltonen2017}.
+
+However, this does not come for free. A high level of \gls{smt} needs lots of registers for all simultaneously executed programs as the registers cannot be fetched from memory for the fast context switches.
+The current approach of GPUs tries to get the best of both worlds, a large amount of usable registers and a high level of concurrency.
+The amount of registers that a shader uses is dynamically allocated.
+If a shader uses a low amount of registers, it allows multiple other shaders to be run on the same SIMD unit with \gls{smt}.
+If a shader uses a high amount of registers, this level of concurrency will be lower.
+The amount of shaders which can run simultaneously is called \emph{occupancy}.
+If the occupancy is too low, the GPU stalls when waiting for memory and will deliver degraded performance.
+Thus, the less registers a shader uses, the better the performance can get (up to a certain point).
 
 \subsection{PGO in LLVM}
 \label{sub:pgo-background}
-The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM, e.g. the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler and instrumentation. We will concentrate on the instrumenting profiler in the following.
+The LLVM compiler framework has existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM, e.g. the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler and instrumentation. We will make use of the instrumenting profiler in the following.
 
 \subsection{Basic Block Counting}
 \label{sub:counter-instrumentation}
 One information we would like to collect through profiling is how often each basic block is executed. The simplest version of such an instrumentation would insert one counter at each basic block.
 Let us consider an example with an if-else-statement. The instrumentation would insert four counters: Before the branching, in the if-block, in the else-block and after the branching in the following block. However, we can get the same information with only two counters. We can count the executions of the if-part and the total executions either in the beginning or in the end. To get the counter of the else-part we subtract the if-part counter from the total amount.
 
-In 1973, \citet{Knuth1973} showed and proofed an algorithm to find a minimal set of blocks where we need to insert counters. This algorithm is implemented in the instrumentation of LLVM.
+In 1973, \citet{Knuth1973} showed and proofed an algorithm to find a minimal set of blocks where we need to insert counters.
+This algorithm is implemented in the instrumentation profiling of LLVM, and automatically gets used when turning on basic block counting.
 
 \subsection{Structurizing the CFG}
 \label{sub:structurize}
@@ -87,7 +101,7 @@ We cannot have divergent control flow within a single SIMD unit. However, the sh
 Therefore the compiler needs to change the \gls{cfg} in such a way, that it gets suitable for SIMD units and gracefully handles diverging control flow.
 In LLVM, this pass is called \texttt{StructurizeCFG}.
 
-The CFG structurization converts the control flow so it sets the EXEC mask and runs both, the if- and the else-branch if necessary. The result of such a transformation is shown in \cref{fig:structurize}. Loops are transformed such that the whole unit runs the loop until the last lane finishes.
+The CFG structurization converts the control flow so it sets the EXEC mask and runs both, the if- and the else-branch if necessary. The result of such a transformation is shown in \cref{fig:structurize}. Loops are transformed similarly, such that the whole unit runs the loop until the last lane finishes.
 
 \begin{figure}
 	\centering
@@ -99,20 +113,23 @@ The CFG structurization converts the control flow so it sets the EXEC mask and r
 The \glsdesc{elf} (ELF) is a file format for programs, libraries object files and coredumps. It is used mainly on Unix systems and is the main format for executables on Linux.
 In the AMD Vulkan driver, LLVM outputs an ELF object file. This ELF object is then passed to PAL, which uploads the code to the GPU and starts the execution. Some parts of the ELF are interesting to us so this section provides a summary about their structure and functionality.
 
-An ELF object file contains a variable amount of sections. The \texttt{.text} section for example contains the code or program text. The \texttt{.data} and \texttt{.rodata} sections contain writable and read-only data that will be available to the program at runtime. There are also sections which contain meta information for the loader. The loader is the application which loads the ELF file, in AMDVLK this is a part of PAL.
+An ELF object file contains a variable amount of sections. The \texttt{.text} section for example contains the code, also called program text.
+The \texttt{.data} and \texttt{.rodata} sections contain writable and read-only data that will be available to the program at runtime. There are also sections which contain meta information for the loader. The loader is the application which loads the ELF file, in AMDVLK this is a part of PAL.
 
 An essential part of the meta information are the symbols. A symbol associates a certain region in a segment with a name. E.g. exported functions from libraries are marked with a symbol. The ELF loader reads the symbols that an executable needs and matches them with the exported symbols of libraries.
 
-\paragraph{Relocations} Another use of symbols are relocations. When compiling code into an object file, the compiler does not yet know at which address the \texttt{.text} and \texttt{.data} sections will be placed. However, the code can contain references to the data section for reading and writing static variables, so the compiler needs to output instructions that use addresses in other sections. This is where relocation sections come in. The compiler uses zeroes as  placeholders for the address and writes them into the \texttt{.text} section, for example for a variable access -- relocations can be used in any section. Then the compiler adds a relocation entry that instructs the loader to fill out the address in the \texttt{.text} section at runtime, when it is known.
+\paragraph{Relocations} Another use of symbols are relocations. When compiling code into an object file, the compiler does not yet know at which address the \texttt{.text} and \texttt{.data} sections will be placed. However, the code can contain references to the data section for reading and writing static variables, so the compiler needs to output instructions that use addresses in other sections. This is where relocation sections come in. The compiler uses zeroes as  placeholders for the address and writes them into the \texttt{.text} section, for example for a variable access --- relocations can be used in any section. Then the compiler adds a relocation entry that instructs the loader to fill out the address in the \texttt{.text} section at runtime, when it is known.
 
-Each relocation section connects one symbol section with the section where the loader should fill out the addresses, for example the \texttt{.text} section. The relocation section references the symbol section in its \texttt{sh\_link} field -- where \texttt{sh} means section header -- and the target (\texttt{.text}) section in the \texttt{sh\_info} attribute. Each relocation entry describes which symbol to use, how to compute the final address value and where to write it.
+Each relocation section connects one symbol section with the section where the loader should fill out the addresses, for example the \texttt{.text} section. The relocation section references the symbol section in its \texttt{sh\_link} field --- where \texttt{sh} means section header --- and the target (\texttt{.text}) section in the \texttt{sh\_info} attribute. Each relocation entry describes which symbol to use, how to compute the final address value and where to write it.
 
 The different ways to compute addresses are encoded in the type field and are dependent on the hardware architecture. Two different types that are found for many architectures are absolute and relative relocations. An absolute relocation simply writes the address of a symbol (plus an optional offset). A relative relocation subtracts the target address (where the loader writes the result) before writing the resolved address. This is used for relative addressing, where the code usually loads the instruction pointer and adds a constant.~\cite{BenderskyRelocations}
 
 After the compiler emits object files, the linker merges multiple object files into an executable. It merges similar sections into \emph{segments} (also called \emph{program headers} in ELF). At runtime, the segments of one library are loaded at a random offset address but with fixed distances between each other. This means the linker knows the relative distance between two addresses in the code (and data) and is able to resolve all relative relocations that refer to a symbol in the same ELF object. Of course, it cannot resolve relative relocations to other libraries as their distance is not fixed.
 
-This could work in the same way on GPUs. However, PAL does not support allocating memory at fixed addresses at the moment and it does not perform relocations (this was fixed as part of this thesis). The AMDVLK driver needs to skip the linker step and compiled shaders are stored as ELF object files, like \texttt{.o} files when compiling C.
+This could work in the same way on GPUs. However, PAL does not support allocating memory at fixed addresses at the moment and it does not perform relocations (the latter was fixed as part of this thesis). The AMDVLK driver needs to skip the linker step and compiled shaders are stored as ELF object files, like \texttt{.o} files when compiling C code.
 
-\paragraph{PIC} While relocations are still in use today, the plain use of relocations has several disadvantages. As the loader changes the content of the code section, we cannot share these sections in memory between multiple programs or even multiple instances of the same program because the addresses are different each time. Another disadvantage is that the loader has to go through all usages of every relocated variable and function which can cause a long loading time for programs. The solution is to write all addresses that have to be linked into one section and only once. This section is called \gls{got}. When the address of a linked variable is needed, its address loaded from the \gls{got} and dereferenced. Functions are called similarly. This \gls{pic} approach enables sharing the code sections between processes because only the \gls{got} is different. A disadvantage is that two dereferences are needed compared to only one with plain relocations.~\cite{BenderskyPic}
+\paragraph{PIC} While relocations are still in use today, the plain use of relocations has several disadvantages. As the loader changes the content of the code section, we cannot share these sections in memory between multiple programs or even multiple instances of the same program because the addresses are different each time.
+Another disadvantage is that the loader has to go through all usages of every relocated variable and function which can cause a long loading time for programs. The solution is to write all addresses that have to be linked into one section and only once. This section is called \gls{got}.
+When the address of a linked variable is needed, its address is loaded from the \gls{got} and dereferenced. Functions are called similarly. This \gls{pic} approach enables sharing the code sections between processes because only the \gls{got} is different. A disadvantage is that two dereferences are needed compared to only one with plain relocations.~\cite{BenderskyPic}
 
 Today, \gls{pic} is the standard technique for libraries on Linux. For GPUs, the advantages of PIC are currently not relevant as there are no shared libraries that have to be linked so no code is shared between processes. On the other hand, the disadvantage of an additional dereference is relevant so currently it is not advantageous to use PIC on GPUs.

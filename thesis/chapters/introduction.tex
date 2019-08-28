@@ -48,7 +48,9 @@ Before we can start to implement more sophisticated optimizations in the compile
 \label{sub:notation}
 There exist quite a few different notations for the logical and physical parts of a GPU. Multiple vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
 
-Throughout this paper, we will use the term \emph{SIMD lane} for a single work-item. As a wavefront (AMD) or warp (NVIDIA) is run on a SIMD unit, we will use the expression \emph{SIMD unit}.
+Throughout this paper, we will use the term \emph{SIMD lane} for a single work-item.
+For a group of work-items which are run on the same SIMD unit, we will use the expression \emph{SIMD unit}.
+AMD revers to this group of items as wavefront while NVIDIA uses warp.
 
 With respect to profile-guided optimizations, we will use the word \emph{benchmark} to label an automated, scripted execution of an application which is used to gather profiling data.
 
@@ -57,17 +59,18 @@ With respect to profile-guided optimizations, we will use the word \emph{benchma
 
 \subsection{Contributions}
 \label{sub:contributions}
-This work contributes several instrumentations for Vulkan on AMD GPUs in the AMDVLK driver. We use the instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
+This work contributes several instrumentations for Vulkan on AMD GPUs in the AMDVLK driver.
+We use these instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
 
 One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{bb} is executed. This allows the compiler to detect hot paths in shaders and optimize them more aggressively. We measure and evalute the effect of optimizations in LLVM when accurate BB counts are available.
 
-Accurate counters also allow detecting unused basic blocks, that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code have an effect on the register allocation of shaders.
+Accurate counters also allow detecting unused basic blocks that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code have an effect on the register allocation of shaders.
 
 A second instrumentation counts how often certain variables are uniform or divergent at runtime. A uniform variable has the same value on all active lanes on a SIMD unit, which permits optimizations that are impossible for divergent variables.
 The uniformity is important for branches because the GPU might need to execute both branches on a SIMD unit and needs to run them sequentially, one after the other. We present statistics about the uniformity of branches in games.
 Additionally, our instrumentation allows us to analyze the uniformity of memory loads, which we will also present.
 
 To accomplish our goals, we reuse the existing infrastructure in LLVM for profile-guided optimizations. We extend and modify LLVM and the AMD Linux driver to support our instrumentations and use the collected data.
-To support PGO in the driver, we fixed various bugs in both, the hardware management layer of the driver and in LLVM, and implemented loading \gls{elf} sections onto the GPU and applying relocations to the code.
+To support PGO in the driver, we fixed various bugs in both, the hardware management layer of the driver (PAL) and in LLVM, and implemented loading \gls{elf} sections onto the GPU and applying relocations to the code.
 
 Finally, we discuss the effect of inserting instrumentation counters on the SIMD unit level\footnote{After structurizing the \gls{cfg} as explained in \cref{sub:structurize}} or per lane.

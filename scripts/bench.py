@@ -122,6 +122,8 @@ def registers(args):
 		path = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
 		files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith(".pipe")]
 		for file in files:
+			cs_vgprs = 0
+			cs_sgprs = 0
 			vs_vgprs = 0
 			vs_sgprs = 0
 			ps_vgprs = 0
@@ -140,10 +142,16 @@ def registers(args):
 					r = extract(l, "PS_NUM_USED_SGPRS")
 					if r is not None:
 						ps_sgprs = r
+					r = extract(l, "CS_NUM_USED_VGPRS")
+					if r is not None:
+						cs_sgprs = r
+					r = extract(l, "CS_NUM_USED_SGPRS")
+					if r is not None:
+						cs_sgprs = r
 
-			if vs_vgprs == 0 and ps_vgprs == 0:
+			if cs_vgprs == 0 and vs_vgprs == 0 and ps_vgprs == 0:
 				continue
-			rs[file] = [vs_vgprs, vs_sgprs, ps_vgprs, ps_sgprs]
+			rs[file] = [cs_vgprs, cs_sgprs, vs_vgprs, vs_sgprs, ps_vgprs, ps_sgprs]
 			# print(f"{file}\nVS vgprs: {vs_vgprs}\n   sgprs: {vs_sgprs}\nPS vgprs: {ps_vgprs}\n   sgprs: {ps_sgprs}\n")
 
 		# Compute average

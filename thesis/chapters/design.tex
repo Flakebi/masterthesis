@@ -1,15 +1,7 @@
 \clearpage
 \bigsection{Design}
-The LLVM project, their compiler framework and their C compiler clang successfully use \gls{bb} counters for profile-guided optimizations on CPUs. Therefore BB counters suggest themselves to be used for PGO on GPUs.
-
-Where to integrate that instrumentation: In the llpc patcher
-
-How does it work with pal?
-How do we bring the information back to the cpu and write them to disk?
-
-Implementation:
-
-How to call it: command line option or environment variable (with shader hash?)
+In this section, we explain various possible profile-guided optimizations and the data we need for them.
+This sets the foundation for our instrumentation. On a high level, we describe how the needed data can be collected by instrumentation.
 
 \subsection{Workflow}
 \label{sub:workflow}
@@ -29,12 +21,14 @@ To keep the usage and implementation of options simple, we use environment varia
 \subsection{Optimizations}
 The goal of this thesis is to build the instrumentation, which is used in the first step of the PGO workflow. The instrumentation collects information at runtime and is needed to perform optimizations afterwards. Before we can start collecting data, we need to know which information we need. Therefore, it is part of this thesis is to find out which information can enable optimizations and should be collected and also how they can be collected.
 
-The needed data is defined by the optimizations we want to perform in step three. In the following, we list some possible optimizations and the respectively needed profiling data. They are collected from various sources, e.g. PGO optimizations for CPUs~\cite{MicrosoftPgo} and tailored to GPUs, as there are some peculiarities which have to be taken into account. Some described optimizations are specific to the current architecture of GPUs and have no close counterpart on CPUs.
+The needed data is defined by the optimizations we want to perform in step four. In the following, we list some possible optimizations and the respectively needed profiling data.
+The optimizations stem from various sources, e.g. PGO optimizations for CPUs~\cite{MicrosoftPgo} and optimizations tailored to GPUs, as there are some peculiarities which have to be taken into account.
+Some described optimizations are specific to the current architecture of GPUs and have no close counterpart on CPUs.
 
 \subsubsection{Improve linearization}
-\paragraph{Needed data} Branch probabilities
 \paragraph{Description} As described in the introduction, moving seldom taken branches after the return instruction improves the performance.
 \paragraph{Background} This optimization is implemented in LLVM~\cite{llvmLinearization}. To avoid generating worse code, it is only applied when profiling data is available or the compiler assigned a very high probability to the hot branch.
+\paragraph{Needed data} Branch probabilities
 \paragraph{Example}\ \\
 \begin{minipage}{.47\textwidth}
 	\begin{lstlisting}[caption={Linearization --- unoptimized},frame=tlrb,language={[amdgpu]Assembler}]
@@ -65,10 +59,10 @@ else:
 \end{minipage}
 
 \subsubsection{Hoist Texture Loads from Branches}
-\paragraph{Needed data} Branch probabilities
 \paragraph{Description} Texture fetches that happen in branches are sometimes moved before the branch by the compiler to be executed unconditionally. This has the effect that while we wait for the texture content to be loaded from memory, the shader can do computational work and does not have to wait. The optimization speeds up the execution if the branch condition for the texture fetch evaluates to true. However, if the condition evaluates to false, it will degrade performance because the GPU unnecessarily fetches memory and occupies bandwidth.
 % TODO Cite something?
 \paragraph{Background} Some GPU drivers are hoisting texture fetches out of branches, with guessing the probability that a branch is taken.
+\paragraph{Needed data} Branch probabilities
 \paragraph{Example}\ \\
 \begin{minipage}{.47\textwidth}
 	\begin{lstlisting}[caption={Load Hoisting --- unoptimized},frame=tlrb,language={[amdgpu]Assembler}]
@@ -98,19 +92,20 @@ endif:
 \end{minipage}
 
 \subsubsection{Improve register allocation and occupancy}
-\paragraph{Needed data} Branch probabilities
-\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{smt} fashion. If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same compute unit because the register memory is not large enough to hold the registers for more instances at the same time.
+\paragraph{Description} The amount of registers that a shader uses can limit the amount of shaders that run on a single compute unit in \gls{smt} fashion.
+If a single instance of a shader needs many registers, we cannot have multiple instances of them running on the same SIMD unit because the register memory is not large enough to hold the registers for more instances at the same time.
 Therefore, reducing the registers that a shader needs or spilling registers which are rarely needed into memory can improve performance. However, we should not spill registers in the hot path, as this will degrade performance.
 Branch probabilities can provide the information, where we can spill registers and where not.
-\paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use fewer registers is never a performance gain.
-\paragraph{Example} For example a game has a single shader for most of the objects that get drawn. This shader implements all material properties though not all properties are active for each object.
+\paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use fewer registers would never result in a performance gain.
+\paragraph{Needed data} Branch probabilities
+\paragraph{Example} For example a game which has a single shader for most of the objects that get drawn. This shader implements all material properties though not all properties are active for each object.
 One of the effects --- e.g. subsurface scattering --- needs a lot of registers but is enabled for few objects only. The high maximum number of used registers forces a low occupancy.
 In this case, spilling registers in the subsurface scattering implementation leads to lower register usage, higher occupancy and improves the performance.
 
 \subsubsection{Value Profiling}
-\paragraph{Needed data} Variable value distribution
 \paragraph{Description} If a variable has a constant value in most executions, we can introduce a branch and apply constant propagation to provide a fast path. This increases the code size, as parts of the code are duplicated, but can speed up the shader for the common case.
 \paragraph{Background} The concept of value profiling exists since 1997~\cite{Calder1997}. But there is no detailed profiling for GPUs so far, so this is only done for CPUs. In LLVM, value profiling is used to inline e.g. \texttt{memcpy} calls when the size of the copied memory region is small enough.
+\paragraph{Needed data} Variable value distribution
 \paragraph{Example} A shader may compute textures for multiple material effects and blend them together in the end by using a material texture with weights for every effect.
 If an effect is used seldom, its weight is often zero. We should skip the computation of the effect in this case.\ \\
 \begin{minipage}{.47\textwidth}
@@ -136,9 +131,9 @@ endif:
 \end{minipage}
 
 \subsubsection{Detect Uniform Computations}
-\paragraph{Needed data} Variable value distribution on a SIMD unit
-\paragraph{Description} If we do a computation or memory fetch on the same value for every lane on a SIMD unit, it is uniform. Uniform code can be optimized to be executed only once by the scalar unit instead of the vector unit.
-\paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution. Compared to value profiling, we do not need to store used values but only if a value was uniform or not. Using scalar instructions yields great benefits as described in a paper by Chen~\cite{Chen2016}.
+\paragraph{Description} If we do a computation or memory fetch on the same values for every lane on a SIMD unit, it is uniform. Uniform code can be optimized to be executed only once by the scalar unit instead of the vector unit.
+\paragraph{Background} This is similar to value profiling but specialized to GPUs. We do not look at isolated executions of a program. Instead, we inspect if values are differing across one parallel execution. Compared to value profiling, we do not need to store used values but only if a value was uniform or not. Using scalar instructions yields great benefits as described in a paper by \citet{Chen2016}.
+\paragraph{Needed data} Uniformity of variables on a SIMD unit
 \paragraph{Example} If a shader loads an element from a uniform buffer, and we know through instrumentation that the offset into the uniform buffer is usually the same on all SIMD lanes, we can optimize that load.
 The compiler can insert a branch which checks if the offset is uniform at runtime. If it is uniform, the scalar unit loads the element from the uniform buffer.
 If the offset is not uniform at runtime, we fall back to the original, non-optimized variant.
@@ -167,10 +162,10 @@ If the offset is not uniform at runtime, we fall back to the original, non-optim
 %\end{minipage}
 
 \subsubsection{Skip branches}
-\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
-\paragraph{Description} If the compiler encounters a non-uniform branch, it inserts code to set the EXEC mask and a jump which skips the branch on the SIMD unit if no lane wants to execute it. If the compiler knows that the branch will be executed (almost) always, it can omit the skip-jump and save an instruction.
+\paragraph{Description} If the compiler encounters a non-uniform branch, it inserts code to set the EXEC mask and a jump which skips the branch on the SIMD unit if no lane wants to execute it. If the compiler knows that the branch will be executed (almost) always, it can omit the skip-jump and save a few instructions.
 \paragraph{Background} This optimization is an example which has no counterpart for CPUs. CPUs do not have the ability to run SIMD instructions only on a part of the lanes. This is a special case of detecting uniform computations where we are interested in the uniformity of the branch-condition.
-\paragraph{Example} This optimization saves only a single instruction. An example where this can be useful nonetheless is in a hot loop where optimizing away a single instruction has a measurable impact.
+\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
+\paragraph{Example} This optimization saves only a few instructions. An example where this can be useful nonetheless is in a hot loop where optimizing away a single instruction has a measurable impact.
 
 \subsection{Storing Data}
 \label{sub:save-design}
@@ -190,32 +185,76 @@ The filename is set by an environment variable and it can contain the pipeline i
 
 \subsection{Basic Block Counting}
 \label{sub:design_counters}
+The LLVM project, their compiler framework and their C compiler clang successfully use \gls{bb} counters for profile-guided optimizations on CPUs. Thus, BB counters suggest themselves to be used for PGO on GPUs too.
 In LLVM, the counters are used mostly for linearization. To get the accurate information at this stage in the compiler, the \gls{cfg} is instrumented after most optimizations, when it will not be changed significantly anymore.
 An earlier instrumentation can not give us the needed information when basic blocks get duplicated because we would count them as the same block. An early instrumentation can also harm following optimizations, e.g. by making it more difficult to merge duplicated code when different counters get incremented.
 
 After the optimizations, the \gls{cfg} changes one more time on GPUs using the \gls{simt} model: The CFG structurization that makes it possible to run shader code on SIMD units.
-We can insert the instrumentation counters either before the CFG structurization or afterwards and count whole SIMD units. When comparing both options, we need to take into account, that the whole SIMD unit always executes the same instruction.
-For example if only a single lane executes a BB, e.g. an operation that uses aggregated values from the whole unit, we will get a low counter for this block compared to the rest of the blocks. Nevertheless, it does not make sense to deprioritize the block in the linearization step because the whole unit executes the instruction, just with all lanes masked out but one.
-This is a strong argument in favor of inserting the BB counters per unit instead of per lane. For this work, we implemented and compare both methods.
+A detailed comparison of both options can be found in \cref{sub:discussion_structurize}. For this work, we implemented and compare both methods.
 
-After capturing counters, the next task is to use them. As LLVM is already using basic block counters for linearization if they are available, this is a low-hanging fruit.
-The amount of registers that a shader needs can limit the occupancy on a compute unit, i.e. the level of multithreading, which is important to hide memory latency.
-If the occupancy is too low, we cannot hide memory latency good enough and the GPU will be waiting a significant amount of time.
-To improve that situation, we can spill some registers to (scratch) memory and increase the occupancy in that way.
-Basic block counters let us decide which parts of the code are executed seldom or not at all, so we can spill registers there.
-To estimate the possible performance improvement without fully implementing this optimization, we remove all parts of the shader code that are never executed and measure the impact on used registers and performance.
-We cannot use this strategy in a production driver because code that is not executed in a PGO benchmark scene is not necessarily dead code. However, this test can provide us valuable information if such an optimization can be worth the effort.
+After capturing counters, the next task is to use them. As LLVM is already using basic block counters for linearization if they are available, an optimized linearization is a low-hanging fruit.
 
 \subsection{Removing Unused Code}
 \label{sub:design_unused}
+Another interesting optimization affects the number of used registers.
+The amount of registers that a shader needs can limit the occupancy on a compute unit, i.e. the level of multithreading, which is important to hide memory latency.
+If the occupancy is too low, we cannot hide memory latency good enough and the GPU will be waiting a significant amount of time.
+To improve that situation, we can spill some registers to (scratch) memory and increase the occupancy in that way.
+To decide where to spill registers, we need to know which parts of the code are executed seldom or not at all.
+Basic block counters can give us this information.
+To estimate the possible performance improvement without the need to fully implement this optimization, we remove all parts of the shader code that are never executed and measure the impact on used registers and performance.
+We cannot use this strategy in a production driver because code that is not executed in a PGO benchmark scene is not necessarily dead code.
+However, this test can provide us valuable information if such an optimization can be worth the effort.
+
+The normal switch-case lowering pass in LLVM works on the the machine IR level.
+The amdgpu backend however needs to structurize the branch instructions which are the result of the lowering pass to support reaching different case-blocks on multiple SIMD lanes.
+This currently happens on the IR level, thus before the usual switch-case lowering pass.
+To be able to structurize the branches of a switch-case, the amdgpu backend uses a second implementation of switch-case lowering that works on the IR level instead of the machine IR.
+This pass is thought as a temporary replacement for targets that cannot yet make use of switch instructions in the machine IR and not as a permanent solution.
+The pass converts the switch into a binary jump tree but it does not honor basic block frequencies in the process.
+We want to find out if rebalancing the jump tree to reach frequent blocks faster can lead to performance improvements.
+We test this with a small sample program which runs a bytecode virtual machine in a shader with one large switch-case statement.
+
+To reach the two goals, studying register usage and optimized jump trees, we implemented a pass in LLVM which removes basic blocks that are never executed and replaces them by the unreachable intrinsic.
+The collected basic block counters may not be perfectly accurate because we sometimes write out the data while a game is still running.
+As the counters for some blocks are computed via other counters instead of being collected via atomics, even basic blocks that are never executed can have counters greater than zero.
+To remedy these inaccuracies, we consider each basic block as unused code that is executed less than \SI{0.001}{\percent} of the shader executions.
+
+\subsection{Uniform Branches}
+\label{sub:uniformity_branch}
+Not only can we optimize the number of branch instructions in a switch-case, we can also remove branches in an if-else if the condition is always divergent.
+I.e. if most of the times both branches are executed on a SIMD unit for different lanes and the branches are sufficiently short, the compiler can just set the EXEC mask and not skip a branch if the EXEC mask is zero.
+
+The first idea to detect uniform and non-uniform branches is simple.
+For an if-else structure, we count the executed basic blocks per SIMD unit, so afterwards we know how often the unit ran the if-block and the else-block. From these numbers we can compute how often both blocks are executed in one run.
+If both blocks are executed, we know that the condition is not uniform, otherwise either the else-block or the if-block would have been executed, not both. So we can compute how often a condition is uniform or not.
+However, this technique does only work if we have an else-block. Without else-block we cannot compute the uniformity of a condition.
+In addition to that problem, the uniformity of other variables, e.g. memory addresses is also interesting as we will discuss in the next section.
+For these reasons we decided to implement a generic analysis that finds out how often a variable is uniform and which can be applied to any variable.
+
+The decision, if a branch is taken uniformly or not is dependent on the condition.
+If the condition variable is uniform, the branch is taken uniformly. If not, the branch diverges.
+Therefore, analyzing the uniformity of branches is a special case of analyzing generic variables for uniformity where we look at the condition for a branch instruction, so we always analyze booleans.
 
 \subsection{Uniform Variables}
 \label{sub:uniformity}
-Uniformity plays an important role for the efficiency of GPUs~\cite{Chen2016}. Uniform operations need to be executed only once per SIMD unit instead of 64 times and they can be run in parallel to other instructions that are executed per lane. These possible optimizations make it desirable to find out which variables are uniform and which divergent. LLVM contains a static divergence analysis for this purpose which uses known sources of divergence like shader input variables and marks all possibly divergent variables. All non-marked variables are known to be uniform.
+This section describes how we analyze at runtime if generic (integer and float) variables are uniform or divergent.
+Uniformity plays an important role for the efficiency of GPUs~\cite{Chen2016}, thus we want to improve the handling of uniform variables.
+Uniform operations need to be executed only once per SIMD unit instead of 64 times, and they can be run in parallel to other instructions that are executed per lane.
+These possible optimizations make it desirable to find out which variables are uniform and which divergent.
+LLVM contains a static divergence analysis for this purpose which uses known sources of divergence like shader input variables and marks all possibly divergent variables.
+All non-marked variables are known to be uniform.
 
-However, this analysis may not find all uniform variables. Some variables may always be uniform at runtime but the compiler does not have enough knowledge about the application logic to prove that it is always the case. Additionally, it may be interesting to know variables which are uniform in \emph{most} cases. If we know variables that are mostly uniform, we can introduce specialized fast paths and fall back to a slower, non-uniform version if necessary.
+However, this analysis may not find all uniform variables.
+Some variables may always be uniform at runtime but the compiler does not have enough knowledge about the application logic to prove that it is always the case.
+Additionally, it may be interesting to know variables which are uniform in \emph{most} cases.
+If we know variables that are mostly uniform, we can introduce specialized fast paths and fall back to a slower, non-uniform version if necessary.
 
-The first idea to detect uniform branches is simple. At an if-else, we count the executed basic blocks per SIMD unit, so afterwards we know how often the unit ran the if-block and the else-block. From these numbers we can compute how often both blocks are executed in one run.
-If both blocks are executed, we know that the condition is not uniform, otherwise either the else-block or the if-block would have been executed, not both. So we can compute how often a condition is uniform or not.
-However, this technique does only work if we have an else-block. Without else-block we cannot compute the uniformity of a condition. In addition to that problem, the uniformity of other variables, e.g. memory addresses is also interesting.
-For these reasons we decided to implement a generic analysis that finds out how often a variable is uniform.
+To detect, if a variable is uniform during runtime, we use the \texttt{read\_first\_lane} intrinsic, which transfers the value of a 32-bit variable from the first active lane to every lane.
+In each lane, we compare if the value in this lane is not equal to the value of the first lane.
+The \texttt{icmp} intrinsic gives us a 64-bit integer with one bit for the comparison result of each lane.
+If one of these bits is one, so the integer is unequal to zero, the variable is \textbf{not} uniform.
+In the divergent case, we increment a counter.
+At the end of the execution, if this counter is zero, the variable which is associated with this counter was always uniform.
+To check if a variable is statically uniform, detected by the compiler, we use the \texttt{DivergenceAnalysis} in LLVM.
+Unfortunately, the analysis sometimes returns inaccurate results, depending on the position in the pipeline when it is run.
