@@ -1,0 +1,23 @@
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	xlabel={Game},
+	ylabel={\#Registers used},
+	xmin=0,
+	xmax=40,
+	grid=both,
+	axis lines=left,
+	bar width=0.5cm,
+]
+
+\addplot [
+	fill=tumblue,
+] table {data/dota_bbs.txt};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Register usage in vertex shaders}
+\label{dia:registers_vs}
+\end{figure}

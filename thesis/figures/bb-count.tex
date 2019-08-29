@@ -1,0 +1,48 @@
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{minipage}[t]{.45\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	xlabel={\#BBs in a shader},
+	ylabel={\#Shaders},
+	xmin=0,
+	xmax=40,
+	grid=both,
+	axis lines=left,
+	bar width=0.5cm,
+]
+
+\addplot [
+	fill=tumblue,
+] table {data/dota_bbs.txt};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{The amount of basic blocks per shader in Dota 2}
+\label{dia:shader_bbs_dota}
+\end{minipage}\qquad
+\begin{minipage}[t]{.45\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	xlabel={\#BBs in a shader},
+	ylabel={\#Shaders},
+	xmin=0,
+	xmax=60,
+	grid=both,
+	axis lines=left,
+	bar width=0.3cm,
+]
+
+\addplot [
+	fill=tumblue,
+] table {data/ashes_bbs.txt};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{The amount of basic blocks per shader in Ashes of the Singularity}
+\label{dia:shader_bbs_ashes}
+\end{minipage}
+\end{figure}

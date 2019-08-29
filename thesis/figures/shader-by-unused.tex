@@ -1,0 +1,23 @@
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	xlabel={Unused code [\SI{}{\percent}]},
+	ylabel={Shader count},
+	xmin=0,
+	xmax=40,
+	grid=both,
+	axis lines=left,
+	bar width=0.5cm,
+]
+
+\addplot [
+	fill=tumblue,
+] table {data/dota_bbs.txt};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{The amount of shaders by unused code}
+\label{dia:shader_by_unused}
+\end{figure}

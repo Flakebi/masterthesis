@@ -1,0 +1,23 @@
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	xlabel={Game},
+	ylabel={Uniformity},
+	xmin=0,
+	xmax=40,
+	grid=both,
+	axis lines=left,
+	bar width=0.5cm,
+]
+
+\addplot [
+	fill=tumblue,
+] table {data/dota_bbs.txt};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Uniformity of branches}
+\label{dia:shader_by_unused}
+\end{figure}

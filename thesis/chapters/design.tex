@@ -183,7 +183,7 @@ Therefore we link the static library of LLVM into the driver.
 Before calling the dump file function, we map the counters in GPU memory to the CPU and we tell LLVM the name of the file we want to write.
 The filename is set by an environment variable and it can contain the pipeline id so the data does not get overwritten when saving multiple pipelines.
 
-\subsection{Basic Block Counting}
+\subsection{Basic Block Counters}
 \label{sub:design_counters}
 The LLVM project, their compiler framework and their C compiler clang successfully use \gls{bb} counters for profile-guided optimizations on CPUs. Thus, BB counters suggest themselves to be used for PGO on GPUs too.
 In LLVM, the counters are used mostly for linearization. To get the accurate information at this stage in the compiler, the \gls{cfg} is instrumented after most optimizations, when it will not be changed significantly anymore.

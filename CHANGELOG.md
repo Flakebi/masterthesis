@@ -1,4 +1,5 @@
 # 2019-08-12 – 2019-08-18
+- Add stubs for diagrams
 - Finish text up to implementation for now
 - Generate table for overhead
 - Add discussion about per lane vs per unit

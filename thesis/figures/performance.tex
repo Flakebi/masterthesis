@@ -1,0 +1,23 @@
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	xlabel={Game},
+	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
+	xmin=0,
+	xmax=40,
+	grid=both,
+	axis lines=left,
+	bar width=0.5cm,
+]
+
+\addplot [
+	fill=tumblue,
+] table {data/dota_bbs.txt};
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Performance of games with PGO}
+\label{dia:performance}
+\end{figure}

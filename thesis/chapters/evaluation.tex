@@ -1,75 +1,50 @@
 \clearpage
 \bigsection{Evaluation}
-Something like threads to validity: Inserting profiling code into a shader changes the behavior of the shader.
-Impact of instrumentation makes it slower, however the rendered scenes stay the same, we may get smaller counter values than without instrumentation
-It should have no impact when measuring branch probabilities, as the taken branches do not change when inserting the branch counting code \emph{after optimizations}.
-
-\subsection{Effects}
-\label{sub:effets}
-The basic block counters influence order of basic blocks -> No impact on performance on most shaders?
-Marks pixel shaders as hot and vertex shaders as unlikely -> No impact on performance.
+% TODO How much time spend benchmarking
 
 \subsection{Basic Block Counters}
-\label{sub:evaluation_counters}
-% TODO diagram
+\label{sub:eval_counters}
 Shaders are small programs compared to CPU programs, more like a single function. This means the number of basic blocks in a shader is low as seen in \cref{dia:shader_bbs_dota}.
 LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is shown in \dots. The optimizations do not change the performance of the selected games significantly.
 
-\begin{figure}
-\pgfplotsset{width=\textwidth}
-\centering
-\begin{minipage}[t]{.45\textwidth}
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-	ybar,
-	xlabel={\#BBs in a shader},
-	ylabel={\#Shaders},
-	xmin=0,
-	xmax=40,
-	grid=both,
-	axis lines=left,
-	bar width=0.5cm,
-]
+The basic block counters influence order of basic blocks -> No impact on performance on most shaders?
+Marks pixel shaders as hot and vertex shaders as unlikely.
 
-\addplot [
-	fill=tumblue,
-] table {data/dota_bbs.txt};
-\end{axis}
-\end{tikzpicture}
-\captionof{figure}{The amount of basic blocks per shader in Dota 2}
-\label{dia:shader_bbs_dota}
-\end{minipage}\qquad
-\begin{minipage}[t]{.45\textwidth}
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-	ybar,
-	xlabel={\#BBs in a shader},
-	ylabel={\#Shaders},
-	xmin=0,
-	xmax=60,
-	grid=both,
-	axis lines=left,
-	bar width=0.3cm,
-]
-
-\addplot [
-	fill=tumblue,
-] table {data/ashes_bbs.txt};
-\end{axis}
-\end{tikzpicture}
-\captionof{figure}{The amount of basic blocks per shader in Ashes of the Singularity}
-\label{dia:shader_bbs_ashes}
-\end{minipage}
-\end{figure}
+\input{figures/counter-values.tex}
+\input{figures/bb-count.tex}
 
 \subsection{Unused code}
-\label{sub:evaluation_unused}
+\label{sub:eval_unused}
 We test the effect of removing unused code with a small sample program which runs a bytecode virtual machine in a shader with one large switch-case statement.
 The bytecode computes the final fragment color and in our example only uses a single bytecode instruction out of 71 possible instructions.
 Using PGO, we detect that all other instructions are never executed and in the optimized shader version we remove all these basic blocks.
 This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has a lot less basic blocks than before.
+
+\input{figures/unused-by-bb.tex}
+\input{figures/unused-by-game.tex}
+\input{figures/shader-by-unused.tex}
+
+Register usage, split by shader type.
+For each game in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
+\input{figures/registers-cs.tex}
+\input{figures/registers-vs.tex}
+\input{figures/registers-fs.tex}
+
+\subsection{Uniform Branches}
+\label{sub:eval_uniform_branches}
+
+\input{figures/uniform-branches.tex}
+
+\subsection{Uniform Loads}
+\label{sub:eval_uniform_loads}
+
+\input{figures/uniform-loads.tex}
+
+\subsection{Performance}
+\label{sub:eval_perf}
+Performance comparison in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
+
+\input{figures/performance.tex}
 
 \subsection{Overhead}
 \label{sub:overhead}
@@ -88,57 +63,7 @@ As expected, incrementing per lane needs the most time. An atomic add causes les
 The reason is that the non-atomic increment needs a load and a store operation where the atomic version needs only a single memory transaction. The actual addition is computed inside the L2 cache for atomics.
 For Ashes of the Singularity, we cannot see much of a difference in performance. The per-lane variant is significantly slower but only by \SI{0.25 \pm 0.06}{\percent}.
 
-\begin{figure}
-\centering
-\pgfplotsset{width=0.75\textwidth}
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-	ybar=0.2cm,
-	enlarge x limits=0.4,
-	symbolic x coords={dota,ashes},
-	xticklabels={Dota 2,Ashes of the Singularity},
-	xtick=data,
-	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
-	ymin=0,
-	ymax=210,
-	grid=both,
-	nodes near coords,
-	every node near coord/.append style={rotate=90, anchor=west},
-	bar width=0.5cm,
-	legend style={at={(1,1)},anchor=north east},
-]
-
-\addplot [
-fill=color0,
-error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-none.txt};
-
-\addplot [
-	fill=color1,
-	error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-non-atomic-wave-late.txt};
-
-\addplot [
-	fill=color2,
-	error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-late.txt};
-
-\addplot [
-	fill=color3,
-	error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-wave-late.txt};
-
-\legend{No counters,Non-atomic per SIMD unit,Atomic,Atomic per SIMD unit}
-\end{axis}
-\end{tikzpicture}
-\captionof{figure}{Overhead of BB counters}
-\label{dia:overhead}
-\end{figure}
+\input{figures/overhead.tex}
 % TODO Why ashes? Code size / BB-count
 
 \begin{figure}
