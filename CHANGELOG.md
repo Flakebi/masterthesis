@@ -1,4 +1,5 @@
 # 2019-08-26 – 2019-09-01
+- Change single lane executions to more robust method from atomic optimizations
 - Add diagrams for unused code
 - Automate data collection and diagram creation
 - Add stubs for diagrams

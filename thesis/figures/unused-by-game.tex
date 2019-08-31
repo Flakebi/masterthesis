@@ -2,26 +2,8 @@
 \pgfplotsset{width=\textwidth}
 \centering
 \begin{tikzpicture}
-\begin{axis}[
-	ybar,
-	enlarge x limits=0.4,
-	symbolic x coords={dota,ashes},
-	xticklabels={Dota 2,Ashes of the Singularity},
-	xtick=data,
-	ylabel={Unused code [\SI{}{\percent}]},
-	ymin=0,
-	grid=both,
-	nodes near coords,
-	every node near coord/.append style={rotate=90, anchor=west},
-	bar width=0.5cm,
-	legend style={at={(1,1)},anchor=north east},
-]
-
-\addplot [
-	fill=tumblue,
-] table[header=false] {data/registers-cs.txt};
-\end{axis}
+\runtex{unused-code-summary}
 \end{tikzpicture}
-\captionof{figure}{The fraction of unused code per game}
-\label{dia:unused_by_bb}
+\captionof{figure}{The fraction of unused basic blocks per game}
+\label{dia:unused_by_game}
 \end{figure}

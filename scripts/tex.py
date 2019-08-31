@@ -5,7 +5,7 @@ from os import path
 from data import *
 from utils import *
 
-games = {"dota": "Dota 2", "ashes": "Ashes", "dow3": "Dawn of War III", "f12017": "F1 2017", "madmax": "Mad Max"}
+games = {"dota": "Dota 2", "ashes": "Ashes", "dow3": "Warhammer", "f12017": "F1 2017", "madmax": "Mad Max"}
 
 def overhead(args):
 	# files = {"none": "No counters", "non-atomic-wave-late": "Non-atomic, per unit",
@@ -136,8 +136,6 @@ def unused_code(args):
 
 		v2 = get_non_zero(v)
 
-		#bins = 8
-		#bin_size = max([len(l) for l in v]) // bins + 1
 		bins = max([len(l) for l in v2]) + 1
 		bin_size = 1
 		bin_zero = [0] * bins
@@ -210,6 +208,52 @@ def max_bbs(args):
 		bins = max([len(l) for l in v2]) + 1
 		print(f"{bins}")
 
+def unused_code_summary(args):
+	used_games = []
+	for game in sorted(games.keys()):
+		for k, v in counters.items():
+			if not k.startswith(game):
+				continue
+
+			used_games.append((game, v))
+
+	print(f"""
+\\begin{{axis}}[
+	ybar,
+	enlarge x limits=0.4,
+	symbolic x coords={{{",".join([g for g, _ in used_games])}}},
+	xticklabels={{{",".join([games[g] for g, _ in used_games])}}},
+	xtick=data,
+	ylabel={{Unused code [\SI{{}}{{\percent}}]}},
+	ymin=0,
+	ymax=0.5,
+	grid=both,
+	nodes near coords,
+	every node near coord/.append style={{rotate=90, anchor=west}},
+	bar width=0.5cm,
+	legend style={{at={{(1,1)}},anchor=north east}},
+]
+
+\\addplot[
+	fill=tumblue,
+] table[header=false, row sep=\\\\] {{\
+""")
+
+	for game, v in used_games:
+		v2 = get_non_zero(v)
+
+		all_bbs = 0
+		zero_bbs = 0
+		for pipeline in v2:
+			all_bbs += len(pipeline)
+			for c in pipeline:
+				if c == 0:
+					zero_bbs += 1
+
+		print(f"{game}\t{zero_bbs / all_bbs}\\\\")
+
+	print("};\n\\end{axis}")
+
 def main():
 	actions = {
 		"overhead": overhead,
@@ -218,6 +262,7 @@ def main():
 		"unused-code": unused_code,
 		"bbs": bbs,
 		"max-bbs": max_bbs,
+		"unused-code-summary": unused_code_summary,
 	}
 
 	parser = argparse.ArgumentParser(description="Generate tex code")

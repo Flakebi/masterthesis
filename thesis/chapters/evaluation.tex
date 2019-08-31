@@ -1,6 +1,7 @@
 \clearpage
 \bigsection{Evaluation}
 % TODO How much time spend benchmarking
+Games: Ashes of the Singularity which will sometimes be abbreviated as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we will shorten to Warhammer.
 
 \subsection{Basic Block Counters}
 \label{sub:eval_counters}
@@ -19,7 +20,6 @@ This means most basic blocks get executed less than $10^6$ times. A few blocks r
 
 \input{figures/counter-values.tex}
 \input{figures/counter-values2.tex}
-\input{figures/bb-count.tex}
 
 \subsection{Unused code}
 \label{sub:eval_unused}
@@ -30,13 +30,14 @@ This leaves us with compare and jump instructions from the original binary jump 
 
 \input{figures/unused-by-bb.tex}
 \input{figures/unused-by-game.tex}
-\input{figures/shader-by-unused.tex}
 
 Register usage, split by shader type.
 For each game in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
 \input{figures/registers-cs.tex}
 \input{figures/registers-vs.tex}
 \input{figures/registers-fs.tex}
+
+% TODO Scatter plot
 
 \subsection{Uniform Branches}
 \label{sub:eval_uniform_branches}
