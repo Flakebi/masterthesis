@@ -1,23 +1,43 @@
+\newcommand\unuseddiag[2]{
 \begin{figure}
-\pgfplotsset{width=\textwidth}
+\pgfplotsset{width=\textwidth,height=7cm}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
 	ybar,
-	xlabel={\#BBs},
-	ylabel={Unused code [\SI{}{\percent}]},
+	xlabel={\#BBs in a Shader},
+	ylabel={Unused BBs [\SI{}{\percent}]},
 	xmin=0,
-	xmax=40,
+	xmax=\runtex{max-bbs -g #1},
+	ymin=0,
+	ymax=100,
+	ytick pos=left,
 	grid=both,
-	axis lines=left,
-	bar width=0.5cm,
+	bar width=0.01cm,
 ]
 
-\addplot [
-	fill=tumblue,
-] table {data/dota_bbs.txt};
+\runtex{unused-code -g #1}
+\end{axis}
+
+\begin{axis}[
+	axis y line*=right,
+	axis x line=none,
+	xlabel={\#BBs in a Shader},
+	ylabel={Distribution of shaders [\SI{}{\percent}]},
+	xmin=0,
+	xmax=\runtex{max-bbs -g #1},
+	ymin=0,
+]
+\runtex{bbs -g #1}
 \end{axis}
 \end{tikzpicture}
-\captionof{figure}{The fraction of unused code by shader size}
-\label{dia:unused_by_bb}
+\captionof{figure}{The fraction of unused code by shader size in #2}
+\label{dia:unused_by_bb_#1}
 \end{figure}
+}
+
+\unuseddiag{dota}{Dota 2}
+\unuseddiag{ashes}{Ashes of the Singularity}
+\unuseddiag{f12017}{F1 2017}
+\unuseddiag{dow3}{Dawn of War III}
+\unuseddiag{madmax}{Mad Max}

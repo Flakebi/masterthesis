@@ -10,7 +10,15 @@ LLVM uses the counters e.g. for linearization. A performance comparison using th
 The basic block counters influence order of basic blocks -> No impact on performance on most shaders?
 Marks pixel shaders as hot and vertex shaders as unlikely.
 
+To get an intuition for the counter values we get, \cref{dia:counter_values} displays a histogram.
+The x-axis of this diagram represents the counter, i.e. how often a basic block is executed.
+A bar for the execution counts 20--30 for example represents all blocks which get run at least 20 times but at max 30 times (excluded).
+The high of the bar counts how many basic blocks fall into this range.
+Lots of blocks fall into the lowest bucket of the diagram, the leftmost bar. This bar is cut off, otherwise the rest of the bars would not be visible.
+This means most basic blocks get executed less than $10^6$ times. A few blocks run a lot more often, more than $10^12$ times.
+
 \input{figures/counter-values.tex}
+\input{figures/counter-values2.tex}
 \input{figures/bb-count.tex}
 
 \subsection{Unused code}
@@ -64,14 +72,15 @@ The reason is that the non-atomic increment needs a load and a store operation w
 For Ashes of the Singularity, we cannot see much of a difference in performance. The per-lane variant is significantly slower but only by \SI{0.25 \pm 0.06}{\percent}.
 
 \input{figures/overhead.tex}
+
 % TODO Why ashes? Code size / BB-count
 
-\begin{figure}
+\begin{table}
 \centering
 \runtex{overhead}
 \captionof{table}{Overhead of BB counters}
 \label{tab:overhead}
-\end{figure}
+\end{table}
 
 
 In some cases, it may be necessary to decrease the overhead of basic block counters. For example to use the instrumentation in production environments where high overheads are not acceptable.

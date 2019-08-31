@@ -1,7 +1,14 @@
-# 2019-08-12 – 2019-08-18
+# 2019-08-26 – 2019-09-01
+- Add diagrams for unused code
+- Automate data collection and diagram creation
 - Add stubs for diagrams
 - Finish text up to implementation for now
+
+# 2019-08-19 – 2019-08-25
+- Write text
 - Generate table for overhead
+
+# 2019-08-12 – 2019-08-18
 - Add discussion about per lane vs per unit
 - Add diagram for overhead
 - Add examples for possible optimizations in design

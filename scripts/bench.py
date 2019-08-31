@@ -57,17 +57,22 @@ def run_game(name, config, remove_cache=True, debug=False):
 	if config.non_atomic:
 		env["AMDVLK_PROFILE_NON_ATOMIC"] = "1"
 
-	if name == "test":
-		subprocess.run("env", check=True, env=env, shell=True)
-		result = None
-	else:
-		game_found = False
-		for g in games:
-			if g.name == name:
-				result = g.run(env, remove_cache, debug, sig)
-				game_found = True
-		if not game_found:
-			raise Exception(f"Unknown game '{name}'")
+	orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
+	shutil.rmtree(orig_pipe_folder, ignore_errors=True)
+
+	game_found = False
+	for g in games:
+		if g.name == name:
+
+			result = g.run(env, remove_cache, debug, sig)
+			game_found = True
+	if not game_found:
+		raise Exception(f"Unknown game '{name}'")
+
+	# Save pipelines
+	pipe_folder = f"/home/sebi/Downloads/Pipelines/{name}-{sig}"
+	shutil.rmtree(pipe_folder, ignore_errors=True)
+	os.rename(orig_pipe_folder, pipe_folder)
 
 	if config.gen:
 		# Convert pgo data
@@ -167,15 +172,22 @@ def registers(args):
 	for f in registers[configs[0]].keys():
 		diffs.append((f, registers_diff(registers, f)))
 
-	diffs = sorted(diffs, reverse=True, key=lambda d: d[1])
+	short_diffs = sorted(diffs, reverse=True, key=lambda d: d[1])
 
-	diffs = diffs[:min(10, len(diffs))]
-	for d in diffs:
+	short_diffs = short_diffs[:min(10, len(short_diffs))]
+	for d in short_diffs:
 		print(d[0])
 		for config in configs:
 			sig = config.get_signature()
 			print(f"  {sig}: {registers[config][d[0]]}")
 		print()
+
+	# Write into file
+	with open("data.py", "a") as f:
+		f.write("\n")
+		for config in configs:
+			sig = config.get_signature()
+			f.write(f'registers["{args.game}-{sig}"] = {registers[config]}\n')
 
 def run(args):
 	"""Run a game with the supplied PGO options"""
@@ -188,46 +200,6 @@ def run(args):
 		sig = config.get_signature()
 		print(f"\n\nRunning {sig}")
 		r = run_game(args.game, config, debug=args.debug)
-
-		# Save pipelines
-		orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
-		pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
-		shutil.rmtree(pipe_folder, ignore_errors=True)
-		os.rename(orig_pipe_folder, pipe_folder)
-
-def diff(args):
-	"""Run a game with different PGO options to compare the compiled output"""
-	if len(args.config) < 1:
-		raise Exception("Please tell me the configs")
-
-	configs = [get_config(c) for c in args.config]
-
-	print("Generating PGO data")
-	for c in configs:
-		if c.use:
-			config = copy(c)
-			config.use = False
-			config.gen = True
-			sig = config.get_signature()
-			print(f"\n\nRunning {sig}")
-			run_game(args.game, config, debug=args.debug)
-
-			# Save pipelines
-			orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
-			pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
-			shutil.rmtree(pipe_folder, ignore_errors=True)
-			os.rename(orig_pipe_folder, pipe_folder)
-
-	for config in configs:
-		sig = config.get_signature()
-		print(f"\n\nRunning {sig}")
-		r = run_game(args.game, config, debug=args.debug)
-
-		# Save pipelines
-		orig_pipe_folder = f"/home/sebi/Downloads/Pipelines/spvPipeline"
-		pipe_folder = f"/home/sebi/Downloads/Pipelines/{args.game}-{sig}"
-		shutil.rmtree(pipe_folder, ignore_errors=True)
-		os.rename(orig_pipe_folder, pipe_folder)
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
@@ -280,6 +252,14 @@ def bench(args):
 	with open("composite.xml", "w") as f:
 		f.write(res)
 
+	# Write into file
+	with open("data.py", "a") as f:
+		f.write("\n")
+		for config, res in results.items():
+			sig = config.get_signature()
+			times = [r.frame_time for r in res]
+			f.write(f'bench["{args.game}-{sig}"] = {times}\n')
+
 def analysis(args):
 	"""Run the PGO analyzation pass, this needs existing PGO generated data"""
 	if len(args.config) > 1:
@@ -308,6 +288,7 @@ def analysis(args):
 
 	dead_code = []
 	uniformity = []
+	counters = []
 	with open(analysis_file) as f:
 		first = True
 		for l in f:
@@ -321,11 +302,13 @@ def analysis(args):
 						"dynamic": uni_dynamic,
 						"divergent": uni_divergent,
 					})
+					counters.append(ctrs)
 				else:
 					first = False
 
 				zero = 0
 				total = 0
+				ctrs = []
 
 				uni_static = {
 					"Condition": 0,
@@ -345,8 +328,10 @@ def analysis(args):
 			elif l == "Count is 0":
 				zero += 1
 				total += 1
+				ctrs.append(0)
 			elif l.startswith("Count is "):
 				total += 1
+				ctrs.append(int(l[l.rfind(" ") + 1:]))
 			elif l.endswith("Static uniform"):
 				typ = l[:l.find(":")]
 				uni_static[typ] += 1
@@ -366,10 +351,18 @@ def analysis(args):
 				"dynamic": uni_dynamic,
 				"divergent": uni_divergent,
 			})
+			counters.append(ctrs)
 
-	print(f"Dead code: {dead_code}")
 	print(f"Uniformity: {uniformity}")
+	print(f"Counters: {counters}")
+	print(f"Dead code: {dead_code}")
 	print(f"Aggregated uniformity: {aggregate(uniformity)}")
+
+	# Write into file
+	with open("data.py", "a") as f:
+		f.write("\n")
+		f.write(f'counters["{args.game}-{sig}"] = {counters}\n')
+		f.write(f'uniformity["{args.game}-{sig}"] = {uniformity}\n')
 
 def get_config(options):
 	config = RunConfig()
@@ -401,7 +394,6 @@ def get_config(options):
 def main():
 	actions = {
 		"run": run,
-		"diff": diff,
 		"bench": bench,
 		"analysis": analysis,
 		"registers": registers,
@@ -410,7 +402,7 @@ def main():
 	parser = argparse.ArgumentParser(description="Benchmarks!")
 	parser.add_argument("action", choices=list(actions.keys()) + ["setup", "teardown"])
 	game_names = [g.name for g in games]
-	parser.add_argument("-g", "--game", choices=game_names + ["test"])
+	parser.add_argument("-g", "--game", choices=game_names)
 	parser.add_argument("-d", "--debug", action="store_true", help="Start in a debugger")
 	parser.add_argument("-c", "--config", action="append", help="Enabled PGO options, comma-separated")
 

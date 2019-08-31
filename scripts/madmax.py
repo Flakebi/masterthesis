@@ -24,8 +24,8 @@ def run(env, remove_cache, debug, sig):
 			buf.write(line)
 		output = buf.getvalue()
 
-	needle = "Average frame time"
+	needle = "FPS list"
 	p = output.find(needle) + len(needle)
-	time = float(output[p:].strip()) / 1000
-	print(f"Got {1/time} fps and {time} s")
-	return RunResult(time)
+	fps = avg([float(s) for s in output[p:].strip().split(",")])
+	print(f"Got {fps} fps and {1/fps} s")
+	return RunResult(1 / fps)

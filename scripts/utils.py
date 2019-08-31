@@ -198,6 +198,12 @@ def get_slotted_data(data, maximum):
 	step = maximum / len(data)
 	return [(int((i + 1) * step), d) for i, d in enumerate(data)]
 
+def safe_divide(z, c):
+	if c == 0:
+		return 0
+	else:
+		return z / c
+
 def create_histograms(data):
 	# Filter out unused shaders
 	prev_len = len(data)
@@ -210,12 +216,6 @@ def create_histograms(data):
 	for z, c in data:
 		a, b = dead_code[c]
 		dead_code[c] = (a + z, b + c)
-
-	def safe_divide(z, c):
-		if c == 0:
-			return 0
-		else:
-			return z / c
 
 	dead_code = [safe_divide(z, c) for z, c in dead_code]
 	print(f"Dead code: {to_slots5(dead_code)}")

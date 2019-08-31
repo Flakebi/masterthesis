@@ -3,19 +3,27 @@
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-	ybar,
-	xlabel={Game},
-	ylabel={Uniformity},
-	xmin=0,
-	xmax=40,
+	ybar stacked,
+	enlarge x limits=0.4,
+	symbolic x coords={dota,ashes},
+	xticklabels={Dota 2,Ashes of the Singularity},
+	xtick=data,
+	ylabel={Uniformity [\SI{}{\percent}]},
+	ymin=0,
+	ymax=100,
 	grid=both,
-	axis lines=left,
+	nodes near coords,
+	every node near coord/.append style={rotate=90, anchor=west},
 	bar width=0.5cm,
+	legend style={at={(1,1)},anchor=north east},
 ]
 
-\addplot [
-	fill=tumblue,
-] table {data/dota_bbs.txt};
+%\addplot [
+	%fill=tumblue,
+%] table[header=false] {data/registers-cs.txt};
+
+\addplot+[ybar] plot coordinates {(dota,60) (ashes,20)};
+\addplot+[ybar] plot coordinates {(dota,40) (ashes,80)};
 \end{axis}
 \end{tikzpicture}
 \captionof{figure}{Uniformity of branches}
