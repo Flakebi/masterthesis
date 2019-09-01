@@ -190,9 +190,10 @@ In LLVM, the counters are used mostly for linearization. To get the accurate inf
 An earlier instrumentation can not give us the needed information when basic blocks get duplicated because we would count them as the same block. An early instrumentation can also harm following optimizations, e.g. by making it more difficult to merge duplicated code when different counters get incremented.
 
 After the optimizations, the \gls{cfg} changes one more time on GPUs using the \gls{simt} model: The CFG structurization that makes it possible to run shader code on SIMD units.
+The counter instrumentation can be added either before the CFG structurization or afterwards.
 A detailed comparison of both options can be found in \cref{sub:discussion_structurize}. For this work, we implemented and compare both methods.
 
-After capturing counters, the next task is to use them. As LLVM is already using basic block counters for linearization if they are available, an optimized linearization is a low-hanging fruit.
+After capturing counters, the next task is to use them. As LLVM is already using basic block counters for linearization if they are available, thus an optimized linearization is a low-hanging fruit.
 
 \subsection{Removing Unused Code}
 \label{sub:design_unused}

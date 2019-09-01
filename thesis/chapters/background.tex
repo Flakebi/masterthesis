@@ -89,6 +89,11 @@ The LLVM compiler framework has existing infrastructure for profile-guided optim
 
 \subsection{Basic Block Counting}
 \label{sub:counter-instrumentation}
+Compilers often use a control flow graph as their internal representation of a program.
+This graph consists of nodes and edges. The edges are jumps or branches in the program, each node consist of a list of instructions that are executed in order.
+Inside a node, no control flow exists, there are no jumps to other instructions and edges which lead to a node always start with the first instruction.
+The nodes are called basic blocks as they are the building block for every program.
+
 One information we would like to collect through profiling is how often each basic block is executed. The simplest version of such an instrumentation would insert one counter at each basic block.
 Let us consider an example with an if-else-statement. The instrumentation would insert four counters: Before the branching, in the if-block, in the else-block and after the branching in the following block. However, we can get the same information with only two counters. We can count the executions of the if-part and the total executions either in the beginning or in the end. To get the counter of the else-part we subtract the if-part counter from the total amount.
 

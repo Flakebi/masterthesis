@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from copy import copy
+import datetime
 from jinja2 import Environment, FileSystemLoader
 import math
 import os
@@ -114,6 +115,12 @@ def registers_diff(registers, f):
 			diff += register_diff(reg0, rs[f])
 	return diff
 
+def open_data():
+	f = open("data.py", "a")
+	date = datetime.datetime.now()
+	f.write(f"\n# {date:%Y-%m-%d %H:%M}\n")
+	return f
+
 def registers(args):
 	if len(args.config) < 1:
 		raise Exception("Please tell me the configs")
@@ -183,8 +190,7 @@ def registers(args):
 		print()
 
 	# Write into file
-	with open("data.py", "a") as f:
-		f.write("\n")
+	with open_data() as f:
 		for config in configs:
 			sig = config.get_signature()
 			f.write(f'registers["{args.game}-{sig}"] = {registers[config]}\n')
@@ -203,7 +209,7 @@ def run(args):
 
 def bench(args):
 	"""Benchmark a game with different PGO options to compare the compiled output"""
-	if len(args.config) < 2:
+	if len(args.config) < 1:
 		raise Exception("Please tell me the configs")
 
 	configs = [get_config(c) for c in args.config]
@@ -253,8 +259,7 @@ def bench(args):
 		f.write(res)
 
 	# Write into file
-	with open("data.py", "a") as f:
-		f.write("\n")
+	with open_data() as f:
 		for config, res in results.items():
 			sig = config.get_signature()
 			times = [r.frame_time for r in res]
@@ -359,8 +364,7 @@ def analysis(args):
 	print(f"Aggregated uniformity: {aggregate(uniformity)}")
 
 	# Write into file
-	with open("data.py", "a") as f:
-		f.write("\n")
+	with open_data() as f:
 		f.write(f'counters["{args.game}-{sig}"] = {counters}\n')
 		f.write(f'uniformity["{args.game}-{sig}"] = {uniformity}\n')
 

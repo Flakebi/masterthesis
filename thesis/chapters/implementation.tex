@@ -231,8 +231,9 @@ Also, counting per unit needs an atomic operation which gets executed on a singl
 
 We implemented per unit counting in the \texttt{InstrProfiling} pass, which is responsible for lowering the profiling increment intrinsics.
 
-When the option to count per SIMD unit is activated, we emit the following LLVM code to add to a counter:
-\begin{lstlisting}[caption={Counting per SIMD unit},language={[x86masm]Assembler}]
+An easy way to restrict the execution to a single lane is to set the EXEC mask to one. This means only the first lane will be active.
+The code in \cref{lst:set_exec} accomplishes this with only three instructions overhead.
+\begin{lstlisting}[caption={Restricting execution to a single SIMD unit},label=lst:set_exec,language={[x86masm]Assembler}]
 ; %1 = EXEC
 %1 = call i64 @llvm.read_register.i64(metadata !1) #1
 ; EXEC = 1
@@ -245,3 +246,17 @@ call void @llvm.write_register.i64(metadata !1, i64 %1) #1
 attributes #1 = { convergent }
 !1 = !{!"exec"}
 \end{lstlisting}
+
+Unfortunately, these instructions do not mark any control flow changes for LLVM so they can get reordered and mess up the rest of the code.
+After structurization, the code mostly stays in order, however in some cases it still gets reordered, leading to graphical artifacts.
+To get stable code for incrementing counters on one lane only, we reuse code from the atomic optimizer.
+This code uses a few intrinsics to create a condition which will only be true for the first line.
+Then it creates an if construct based on the condition where the if-block will only be run for a single lane.
+It expects however to be run before the structurization pass, which will transform the introduced branches.
+To be able to use this code in per unit counting, we adjust the emited code in that case.
+If late instrumentation is active, the \texttt{InstrProfiling} pass directly creates code using the condition modifying intrinsics from structurization.
+I.e. it emulates the \texttt{StructurizeCFG} pass to run afterwards.
+
+The resulting code is more robust to LLVM reordering but also less efficient.
+Also it does not count blocks in the per unit mode when the EXEC mask is zero, so if no SIMD lane is active but the scalar unit may still compute something.
+It results in five instructions overhead when run before structurization and a few more when run afterwards, also depending on the shader type (pixel shaders need special treatment when helper lanes are in use).

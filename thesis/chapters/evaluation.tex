@@ -1,22 +1,36 @@
 \clearpage
 \bigsection{Evaluation}
-% TODO How much time spend benchmarking
-Games: Ashes of the Singularity which will sometimes be abbreviated as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we will shorten to Warhammer.
+% TODO How much time spend benchmarking? + 45 + 1:40 + 25 + 1:48 + 21 + 38
+To evaluate our work, we run the analyses on various applications and also run benchmarks to compare the performance before and after using profile-guided optimizations.
+As we need Vulkan applications, we picked the following five games:
+Ashes of the Singularity which we will sometimes abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we will shorten to Warhammer.
+We also looked at Vulkan benchmarks like vkmark, but this tool does not focus on shaders but instead on the rest of the graphics pipeline.
+Therefore, the shaders are simple and do not provide possibilities for PGO. E.g. using the default LLVM PGO on the shaders did not change a single instruction.
+
+The performance numbers are mostly expressed as frame times, i.e. how long does it take to compute a single frame for the game.
+For example a frame time of \SI{16.6}{\milli\second} roughly corresponds to 60 frames per second.
+The measured times are always given with an error.
 
 \subsection{Basic Block Counters}
 \label{sub:eval_counters}
 Shaders are small programs compared to CPU programs, more like a single function. This means the number of basic blocks in a shader is low as seen in \cref{dia:shader_bbs_dota}.
-LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is shown in \dots. The optimizations do not change the performance of the selected games significantly.
+LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is shown in \cref{dia:performance}.
+% TODO
+The optimizations do not change the performance of the selected games significantly.
+The order of basic blocks seems to have no significant impact on the performance.
 
-The basic block counters influence order of basic blocks -> No impact on performance on most shaders?
-Marks pixel shaders as hot and vertex shaders as unlikely.
+An additional effect which can be observed when compiling shaders with PGO and using instrumentation before the \texttt{StructurizeCFG} pass is that most pixel shaders are marked as hot functions while vertex shaders are often marked as unlikely.
+The reason is that for every three vertices of a triangle, a lot more pixels are drawn.
+Hence a pixel shader gets executed a lot more often than a vertex shader and LLVM marks them accordingly.
 
-To get an intuition for the counter values we get, \cref{dia:counter_values} displays a histogram.
+To get an intuition for the counter values we get, \cref{dia:counter_values} displays a histogram of the basic blocks, sorted by execution count.
 The x-axis of this diagram represents the counter, i.e. how often a basic block is executed.
 A bar for the execution counts 20--30 for example represents all blocks which get run at least 20 times but at max 30 times (excluded).
 The high of the bar counts how many basic blocks fall into this range.
 Lots of blocks fall into the lowest bucket of the diagram, the leftmost bar. This bar is cut off, otherwise the rest of the bars would not be visible.
 This means most basic blocks get executed less than $10^6$ times. A few blocks run a lot more often, more than $10^12$ times.
+
+\Cref{dia:counter_values2} gives a detailed view of the leftmost part of \cref{dia:counter_values}.
 
 \input{figures/counter-values.tex}
 \input{figures/counter-values2.tex}
