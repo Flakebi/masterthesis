@@ -1,3 +1,8 @@
+# 2019-09-02 – 2019-09-08
+- Add text in evaluation
+- Draw diagrams for register usage
+- Add diagrams about performance, finish overhead diagrams
+
 # 2019-08-26 – 2019-09-01
 - Change single lane executions to more robust method from atomic optimizations
 - Add diagrams for unused code

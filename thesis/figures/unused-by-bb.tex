@@ -27,8 +27,11 @@
 	xmin=0,
 	xmax=\runtex{max-bbs -g #1},
 	ymin=0,
+	legend style={at={(1,1)},anchor=north east},
 ]
+\addlegendimage{only marks, fill=gray, draw=gray, fill opacity=0.4}\addlegendentry{Shader distribution}
 \runtex{bbs -g #1}
+\addlegendentry{Shader with unused BBs}
 \end{axis}
 \end{tikzpicture}
 \captionof{figure}{The fraction of unused code by shader size in #2}

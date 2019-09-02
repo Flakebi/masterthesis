@@ -209,7 +209,7 @@ This pass uses the information from annotations and writes the data to a log fil
 This log file is then processed by a Python script to aggregate the data for diagrams and tables.
 
 One part of the collected statistic is the amount of unused basic blocks as described in \cref{sub:impl_unused_code}.
-These statistics lead to the evaluation in \cref{sub:evaluation_counters}.
+These statistics lead to the evaluation in \cref{sub:eval_counters}.
 Other information which are collected through this pass are data about uniform variables.
 An instrumented variable can be either statically uniform, dynamically uniform or divergent.
 The most interesting case are dynamically uniform variables: They are not detected by the compiler to be uniform, but at runtime they turn out to be uniform.

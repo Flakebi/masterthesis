@@ -1,49 +1,25 @@
 \begin{figure}
 \centering
-\pgfplotsset{width=0.75\textwidth}
+\pgfplotsset{width=\textwidth}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-	ybar=0.2cm,
-	enlarge x limits=0.4,
-	symbolic x coords={dota,ashes},
-	xticklabels={Dota 2,Ashes of the Singularity},
+	ybar,
+	enlarge x limits=0.2,
+	cycle list name=mycolors,
+	symbolic x coords={ashes,dota,dow3,f12017,madmax},
+	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
 	xtick=data,
 	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
 	ymin=0,
-	ymax=210,
 	grid=both,
-	nodes near coords,
-	every node near coord/.append style={rotate=90, anchor=west},
+	%nodes near coords,
+	%every node near coord/.append style={rotate=90, anchor=west},
 	bar width=0.5cm,
 	legend style={at={(1,1)},anchor=north east},
 ]
 
-\addplot [
-fill=color0,
-error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-none.txt};
-
-\addplot [
-	fill=color1,
-	error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-non-atomic-wave-late.txt};
-
-\addplot [
-	fill=color2,
-	error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-late.txt};
-
-\addplot [
-	fill=color3,
-	error bars/.cd,
-y dir=both,y explicit
-] table[header=false, y error index=2] {data/overhead-wave-late.txt};
-
-\legend{No counters,Non-atomic per SIMD unit,Atomic,Atomic per SIMD unit}
+\runtex{overhead -d}
 \end{axis}
 \end{tikzpicture}
 \captionof{figure}{Overhead of BB counters}

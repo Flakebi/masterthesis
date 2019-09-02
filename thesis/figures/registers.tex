@@ -1,0 +1,36 @@
+\newcommand\regusage[4]{
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	enlarge x limits=0.2,
+	cycle list name=mycolors,
+	symbolic x coords={ashes,dota,dow3,f12017,madmax},
+	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
+	xtick=data,
+	ylabel={\#Registers used},
+	ymin=0,
+	ymax=#4,
+	grid=both,
+	nodes near coords,
+	every node near coord/.append style={rotate=90, anchor=west},
+	bar width=0.5cm,
+	legend style={at={(0,1)},anchor=north west},
+]
+
+\runtex{registers -g #1}
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{#3 usage in #2}
+\label{dia:registers_#1}
+\end{figure}
+}
+
+\regusage{cs-vgpr}{compute shaders}{Average vector register}{65}
+\regusage{cs-sgpr}{compute shaders}{Average scalar register}{65}
+\regusage{vs-vgpr}{vertex shaders}{Average vector register}{60}
+\regusage{vs-sgpr}{vertex shaders}{Average scalar register}{80}
+\regusage{ps-vgpr}{pixel shaders}{Average vector register}{75}
+\regusage{ps-sgpr}{pixel shaders}{Average scalar register}{125}

@@ -4,22 +4,21 @@
 \begin{tikzpicture}
 \begin{axis}[
 	ybar,
-	enlarge x limits=0.4,
-	symbolic x coords={dota,ashes},
-	xticklabels={Dota 2,Ashes of the Singularity},
+	enlarge x limits=0.2,
+	cycle list name=mycolors,
+	symbolic x coords={ashes,dota,dow3,f12017,madmax},
+	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
 	xtick=data,
 	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
 	ymin=0,
 	grid=both,
-	nodes near coords,
-	every node near coord/.append style={rotate=90, anchor=west},
+	%nodes near coords,
+	%every node near coord/.append style={rotate=90, anchor=west},
 	bar width=0.5cm,
 	legend style={at={(1,1)},anchor=north east},
 ]
 
-\addplot [
-	fill=tumblue,
-] table[header=false] {data/registers-cs.txt};
+\runtex{performance -d}
 \end{axis}
 \end{tikzpicture}
 \captionof{figure}{Performance of games with PGO}

@@ -156,7 +156,7 @@ def registers(args):
 						ps_sgprs = r
 					r = extract(l, "CS_NUM_USED_VGPRS")
 					if r is not None:
-						cs_sgprs = r
+						cs_vgprs = r
 					r = extract(l, "CS_NUM_USED_SGPRS")
 					if r is not None:
 						cs_sgprs = r

@@ -8,54 +8,51 @@ from utils import *
 games = {"dota": "Dota 2", "ashes": "Ashes", "dow3": "Warhammer", "f12017": "F1 2017", "madmax": "Mad Max"}
 
 def overhead(args):
-	# files = {"none": "No counters", "non-atomic-wave-late": "Non-atomic, per unit",
-		# "late": "Atomic, per lane", "wave-late": "Atomic, per unit"}
-	# file_dir = path.join(path.dirname(path.dirname(path.realpath(__file__))), "thesis", "data")
-	data = [("No counters", overhead_normal),
-		("Non-atomic, per unit", overhead_non_atomic_wave_late),
-		("Atomic, per lane", overhead_late),
-		("Atomic, per unit", overhead_wave_late),
-	]
-
-	dia = args.diagram
-	if dia:
-		pass
+	configs = ["", "gen-wave-late", "gen-wave-late-non_atomic"]
+	legend = ["Normal", "Atomic, per unit", "Non-atomic, per unit"]
+	if args.diagram:
+		overhead_diag(args, configs, legend)
 	else:
-		print(r"""\begin{tabular}{l|l|l|l}
+		overhead_tab(args, configs, legend)
+
+def overhead_diag(args, configs, legend):
+	for config in configs:
+		print(f"\\addplot+[error bars/.cd,y dir=both,y explicit] coordinates {{")
+		for game in sorted(games.keys()):
+			key = f"{game}-{config}"
+			if key in bench:
+				val = Value.avg([i * 1000 for i in bench[key]])
+				print(f"({game},{val.val}) +- (0,{val.error})")
+
+		print("};")
+
+	print(f"\\legend{{{{{'},{'.join(legend)}}}}}")
+
+def overhead_tab(args, configs, legend):
+	print(r"""\begin{tabular}{l|l|l|l}
 \textbf{Game} & \textbf{Config} & \textbf{Time per frame} & \textbf{Overhead}\\ """)
 
-	# Sort by game not by column
-
-	for g, name in games.items():
+	for game in sorted(games.keys()):
 		first = True
-		for col, d in data:
-			for game, vals in d.items():
-				if game != g:
-					continue
+		for config, leg in zip(configs, legend):
+			key = f"{game}-{config}"
+			if key in bench:
+				avg_val = Value.avg(bench[key])
 
-				avg_val = Value.avg(vals)
-
-				if dia:
-					pass
+				if first:
+					overhead = ""
+					start = f"\\hline\n{games[game]}"
+					base = avg_val
+					first = False
 				else:
-					if first:
-						overhead = ""
-						start = f"\\hline\n{name}"
-						base = avg_val
-						first = False
-					else:
-						overhead = ((avg_val / base - 1) * 100).tex_str("\\percent")
-						start = ""
+					overhead = ((avg_val / base - 1) * 100).tex_str("\\percent")
+					start = ""
 
-					avg_str = (avg_val * 1000).tex_str("\\milli\\second")
-
-					print(f"""{start} & {col} & {avg_str} & {overhead}\\\\\
+				avg_str = (avg_val * 1000).tex_str("\\milli\\second")
+				print(f"""{start} & {leg} & {avg_str} & {overhead}\\\\\
 """)
 
-	if dia:
-		pass
-	else:
-		print(r"\end{tabular}")
+	print(r"\end{tabular}")
 
 def counter_dist1(ctrs):
 	bin_size = int(11222915000*2.5)
@@ -224,9 +221,9 @@ def unused_code_summary(args):
 	symbolic x coords={{{",".join([g for g, _ in used_games])}}},
 	xticklabels={{{",".join([games[g] for g, _ in used_games])}}},
 	xtick=data,
-	ylabel={{Unused code [\SI{{}}{{\percent}}]}},
+	ylabel={{Unused blocks [\SI{{}}{{\percent}}]}},
 	ymin=0,
-	ymax=0.5,
+	ymax=50,
 	grid=both,
 	nodes near coords,
 	every node near coord/.append style={{rotate=90, anchor=west}},
@@ -250,9 +247,168 @@ def unused_code_summary(args):
 				if c == 0:
 					zero_bbs += 1
 
-		print(f"{game}\t{zero_bbs / all_bbs}\\\\")
+		print(f"{game}\t{zero_bbs / all_bbs * 100}\\\\")
 
 	print("};\n\\end{axis}")
+
+def performance(args):
+	configs = ["", "use-wave-late", "use-wave-late-remove"]
+	legend = ["Normal", "PGO", "PGO + removing blocks"]
+	if args.diagram:
+		performance_diag(args, configs, legend)
+	else:
+		performance_tab(args, configs, legend)
+
+def performance_diag(args, configs, legend):
+	for config in configs:
+		print(f"\\addplot+[error bars/.cd,y dir=both,y explicit] coordinates {{")
+		for game in sorted(games.keys()):
+			key = f"{game}-{config}"
+			if key in bench:
+				val = Value.avg([i * 1000 for i in bench[key]])
+				print(f"({game},{val.val}) +- (0,{val.error})")
+
+		print("};")
+
+	print(f"\\legend{{{{{'},{'.join(legend)}}}}}")
+
+def performance_tab(args, configs, legend):
+	print(r"""\begin{tabular}{l|l|l|l}
+\textbf{Game} & \textbf{Config} & \textbf{Time per frame} & \textbf{Difference}\\ """)
+
+	for game in sorted(games.keys()):
+		first = True
+		for config, leg in zip(configs, legend):
+			key = f"{game}-{config}"
+			if key in bench:
+				avg_val = Value.avg(bench[key])
+
+				if first:
+					overhead = ""
+					start = f"\\hline\n{games[game]}"
+					base = avg_val
+					first = False
+				else:
+					overhead = ((avg_val / base - 1) * 100).tex_str("\\percent")
+					start = ""
+
+				avg_str = (avg_val * 1000).tex_str("\\milli\\second")
+				print(f"""{start} & {leg} & {avg_str} & {overhead}\\\\\
+""")
+
+	print(r"\end{tabular}")
+
+def registers_fun(args):
+	configs = ["", "use-wave-late", "use-wave-late-remove"]
+	legend = ["Normal", "PGO", "PGO + removing blocks"]
+
+	if not args.game:
+		print("Need to get a type (cs/vs/ps) for registers")
+		return
+
+	typ, reg_typ = args.game.split("-")
+	if typ == "cs":
+		start_index = 0
+	elif typ == "vs":
+		start_index = 2
+	elif typ == "ps":
+		start_index = 4
+	else:
+		print(f"{typ} is a wrong type, try cs/vs/ps")
+		return
+
+	if reg_typ == "sgpr":
+		start_index += 1
+	elif reg_typ != "vgpr":
+		print(f"{reg_typ} is a wrong type, try vgpr/sgpr")
+		return
+
+	for config in configs:
+		print("\\addplot coordinates {")
+		for game in sorted(games.keys()):
+			key = f"{game}-{config}"
+			if key in registers:
+				regs = registers[key]
+				count = 0
+				amount = 0
+				for v in regs.values():
+					if v[start_index] != 0:
+						count += v[start_index]
+						amount += 1
+				count /= amount
+
+				print(f"({game},{count})")
+		print("};")
+
+	print(f"\\legend{{{{{'},{'.join(legend)}}}}}")
+
+def uniform(args, key):
+	configs = ["static", "dynamic", "divergent"]
+	amount = {game: 0 for game in games}
+	counters = {}
+	for config in configs:
+		for game in games.keys():
+			counter = 0
+			for shader in uniformity[f"{game}-use-wave-late-uniform"]:
+				counter += shader[config][key]
+
+			if not config in counters:
+				counters[config] = {}
+			counters[config][game] = counter
+			amount[game] += counter
+
+	for config in configs:
+		print("\\addplot coordinates {")
+		for game in sorted(games.keys()):
+			count = counters[config][game] / amount[game] * 100
+			print(f"({game},{count})")
+		print("};")
+
+def uniform_branches(args):
+	uniform(args, "Condition")
+
+def uniform_loads(args):
+	uniform(args, "LoadValue")
+
+def register_scatter(args):
+	# Analyze vgprs only
+	xconfig = "use-wave-late"
+	yconfig = "use-wave-late-remove"
+	indices = [0, 2, 4]
+	games = ["dota", "madmax"]
+
+	print(r"""
+\addplot[scatter,only marks,scatter src=explicit symbolic]
+coordinates {""")
+	for game in games:
+		xdata = registers[f"{game}-{xconfig}"]
+		ydata = registers[f"{game}-{yconfig}"]
+		for k in xdata.keys():
+			if k not in ydata:
+				continue
+
+			# Count of shader types used in the pipeline
+			for i in indices:
+				if xdata[k][i] != 0:
+					print(f"({xdata[k][i]},{ydata[k][i]}) [{game}]")
+
+	print("};")
+
+def data(args):
+	xconfig = "use-wave-late"
+	indices = [0, 2, 4]
+
+	for game in sorted(games.keys()):
+		print(f"\n{game}")
+
+		# Count shaders
+		count = 0
+		xdata = registers[f"{game}-{xconfig}"]
+		for x in xdata.values():
+			for i in indices:
+				if x[i] != 0:
+					count += 1
+		print(f"{count} shaders")
 
 def main():
 	actions = {
@@ -263,6 +419,12 @@ def main():
 		"bbs": bbs,
 		"max-bbs": max_bbs,
 		"unused-code-summary": unused_code_summary,
+		"performance": performance,
+		"registers": registers_fun,
+		"uniform-branches": uniform_branches,
+		"uniform-loads": uniform_loads,
+		"register-scatter": register_scatter,
+		"data": data,
 	}
 
 	parser = argparse.ArgumentParser(description="Generate tex code")

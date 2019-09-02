@@ -4,28 +4,31 @@
 \begin{tikzpicture}
 \begin{axis}[
 	ybar stacked,
-	enlarge x limits=0.4,
-	symbolic x coords={dota,ashes},
-	xticklabels={Dota 2,Ashes of the Singularity},
+	enlarge x limits=0.2,
+	cycle list name=mycolors,
+	symbolic x coords={ashes,dota,dow3,f12017,madmax},
+	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
 	xtick=data,
 	ylabel={Uniformity [\SI{}{\percent}]},
 	ymin=0,
 	ymax=100,
 	grid=both,
 	nodes near coords,
-	every node near coord/.append style={rotate=90, anchor=west},
+	% Do not display text for nodes with value < … by setting opacity to 0
+	node near coords style={
+		/utils/exec={\setbox0\hbox{\pgfmathprintnumber\pgfplotspointmeta}
+		\pgfmathfloattomacro{\pgfplotspointmeta}{\F}{\M}{\E}
+		\pgfmathsetmacro{\myopacity}{ifthenelse(\M*pow(10,\E)<17,0,1)}
+		},
+		rotate=90, anchor=center, opacity=\myopacity},
 	bar width=0.5cm,
-	legend style={at={(1,1)},anchor=north east},
+	legend style={at={(1,1)},anchor=south east},
 ]
 
-%\addplot [
-	%fill=tumblue,
-%] table[header=false] {data/registers-cs.txt};
-
-\addplot+[ybar] plot coordinates {(dota,60) (ashes,20)};
-\addplot+[ybar] plot coordinates {(dota,40) (ashes,80)};
+\runtex{uniform-loads}
+\legend{Static uniform,Dynamic uniform,Divergent}
 \end{axis}
 \end{tikzpicture}
 \captionof{figure}{Uniformity of load instructions}
-\label{dia:shader_by_unused}
+\label{dia:uniform_loads}
 \end{figure}

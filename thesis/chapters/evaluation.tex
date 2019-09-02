@@ -1,60 +1,106 @@
 \clearpage
 \bigsection{Evaluation}
-% TODO How much time spend benchmarking? + 45 + 1:40 + 25 + 1:48 + 21 + 38
-To evaluate our work, we run the analyses on various applications and also run benchmarks to compare the performance before and after using profile-guided optimizations.
+To evaluate our work, we run our analyses on various applications and also run benchmarks to compare the performance before and after using profile-guided optimizations.
 As we need Vulkan applications, we picked the following five games:
 Ashes of the Singularity which we will sometimes abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we will shorten to Warhammer.
 We also looked at Vulkan benchmarks like vkmark, but this tool does not focus on shaders but instead on the rest of the graphics pipeline.
 Therefore, the shaders are simple and do not provide possibilities for PGO. E.g. using the default LLVM PGO on the shaders did not change a single instruction.
+The selected games have in common that they use the Vulkan API on Linux, and they have a benchmark which can be executed automatically and collects the performance data in a machine-readable form.
+There are similar games, which we tried to use but failed because of various problems, like the game does not start at all under Linux.
+The games that we excluded are F1 2018, Serious Sam Fusion 2017 and Total War Saga: Thrones of Britannia, which was not even installable through Steam.
 
-The performance numbers are mostly expressed as frame times, i.e. how long does it take to compute a single frame for the game.
+Another game focused application which we looked at is the Infiltrator Demo Project of the Unreal Engine~\cite{Games2015}.
+This is not a real game, but a demo scene is played when the application starts to showcase the game engine.
+Also, it does not measure the performance to our knowledge, so we did not use it to test the performance of PGO, but we measured the amount of needed registers.
+Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we will describe further in \cref{sub:eval_unused}.
+In total, more than $6 \frac{1}{2}\;\si{h}$ was spent running benchmarks.
+
+The performance numbers are expressed as frame times, i.e. how long does it take to compute a single frame for the game.
 For example a frame time of \SI{16.6}{\milli\second} roughly corresponds to 60 frames per second.
-The measured times are always given with an error.
+The lower the frame time is, the more pictures are shown per second and the better is the performance.
+The measured times are always given with a standard error using a confidence level of \SI{68.3}{\percent} with the Student's t-distribution.
+
+An application like a game uses a lot of shaders, Ashes has 250 different shaders, Dota 2 compiles 877 shaders for the benchmark scene and Mad Max 734 shaders.
+Warhammer uses the least amount with 225 shaders while F1 2017 needs the most with 3220.
+These numbers do not necessarily represent the total number of shaders in the games, but only the amount of shaders which are compiled for the benchmark scene.
+A difference here is that Ashes compiles most of its shaders at the start of the game while Dota compiles shaders lazily when they are needed, so we only saw a fraction of the shaders that Dota contains, but we saw a greater fraction of the shaders in Ashes.
+When evaluating basic block counters, unused code and uniformity, we only consider shaders which were run at least once.
+For the register usage, we collect the statistics over all compiled shaders without taking into account if they have been needed or not.
 
 \subsection{Basic Block Counters}
 \label{sub:eval_counters}
-Shaders are small programs compared to CPU programs, more like a single function. This means the number of basic blocks in a shader is low as seen in \cref{dia:shader_bbs_dota}.
-LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is shown in \cref{dia:performance}.
-% TODO
-The optimizations do not change the performance of the selected games significantly.
-The order of basic blocks seems to have no significant impact on the performance.
+Shaders are small programs compared to CPU programs, more like a single function.
+This means the number of basic blocks in a shader is low, usually around 20 or lower.
+After instrumenting the shaders and running a benchmark, we have a counter associated with each basic block which tells us how often each block was executed.
 
-An additional effect which can be observed when compiling shaders with PGO and using instrumentation before the \texttt{StructurizeCFG} pass is that most pixel shaders are marked as hot functions while vertex shaders are often marked as unlikely.
-The reason is that for every three vertices of a triangle, a lot more pixels are drawn.
-Hence a pixel shader gets executed a lot more often than a vertex shader and LLVM marks them accordingly.
+LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is discussed in \cref{sub:eval_perf}.
+An additional effect of PGO apart from linearization which can be observed when instrumenting before the \texttt{StructurizeCFG} pass is that most pixel shaders are marked as hot functions while vertex shaders are often marked as unlikely.
+The reason is that a triangle contains three vertices but a lot more pixels.
+Hence a pixel shader gets executed more often than a vertex shader and LLVM marks them accordingly.
 
-To get an intuition for the counter values we get, \cref{dia:counter_values} displays a histogram of the basic blocks, sorted by execution count.
+To get an intuition for the collected counter values, we visualize them in a few diagrams.
+\Cref{dia:counter_values} shows a histogram of the basic blocks, sorted by execution count.
 The x-axis of this diagram represents the counter, i.e. how often a basic block is executed.
-A bar for the execution counts 20--30 for example represents all blocks which get run at least 20 times but at max 30 times (excluded).
-The high of the bar counts how many basic blocks fall into this range.
-Lots of blocks fall into the lowest bucket of the diagram, the leftmost bar. This bar is cut off, otherwise the rest of the bars would not be visible.
-This means most basic blocks get executed less than $10^6$ times. A few blocks run a lot more often, more than $10^12$ times.
+A bar for the execution counts $0.8\cdot 10^{12}--1.2\cdot 10^{12}$ for example represents all blocks which get run at least $0.8\cdot 10^{12}$ times but less than $1.2\cdot 10^{12}$ times.
+The height of the bar counts how many basic blocks fall into this range, in this example one basic block of all shaders in Dota 2 falls into the range.
+The lowest bucket of the diagram, the leftmost bar, contains most of the blocks.
+This bar is cut off, otherwise the rest of the bars would not be visible.
+This means most basic blocks get executed less than $10^10$ times.
+A few blocks run a lot more often, two of them more than $10^{12}$ times.
+The blocks that are run most often are the inner parts of a hot loop in a shader.
+\input{figures/counter-values.tex}
 
 \Cref{dia:counter_values2} gives a detailed view of the leftmost part of \cref{dia:counter_values}.
-
-\input{figures/counter-values.tex}
+It only shows the range up to $10^5$ executions.
+In this range, the blocks are distributed more equal, still we see that most blocks are executed seldom while blocks with a higher counter value are rare.
 \input{figures/counter-values2.tex}
 
 \subsection{Unused code}
 \label{sub:eval_unused}
-We test the effect of removing unused code with a small sample program which runs a bytecode virtual machine in a shader with one large switch-case statement.
-The bytecode computes the final fragment color and in our example only uses a single bytecode instruction out of 71 possible instructions.
-Using PGO, we detect that all other instructions are never executed and in the optimized shader version we remove all these basic blocks.
-This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has a lot less basic blocks than before.
-
-\input{figures/unused-by-bb.tex}
+Looking at basic blocks which get never executed, we can remove them and study the changes in register usage and performance.
+The performance comparison can be found in \cref{sub:eval_perf}, this section shows statistics about the amount of unused code.
+The fraction of unused basic blocks ranges from \SI{0.22}{\percent} in Mad Max up to \SI{37.46}{\percent} unused blocks in in Warhammer.
+\Cref{dia:unused_by_game} shows a comparison of all analyzed games.
 \input{figures/unused-by-game.tex}
 
-Register usage, split by shader type.
-For each game in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
-\input{figures/registers-cs.tex}
-\input{figures/registers-vs.tex}
-\input{figures/registers-fs.tex}
+To gain more insight into how shaders and the unused code is distributed, \Cref{dia:unused_by_bb_ashes} and following show the unused code with respect to the size of a shader in basic blocks.
+The x-axis represents the size of a shader, the amount of blocks that a shader contains.
+The gray plot in the background displays the distribution of all shaders in an application.
+A height of \SI{6}{\percent} at one point (the right y-axis is the crucial one here) means that about \SI{6}{\percent} of all shaders in the game have this amount of basic blocks.
+Each black line represents a shader with unused code. The left y-axis is connected to the percentage of unused code.
+\input{figures/unused-by-bb.tex}
 
-% TODO Scatter plot
+We test the effect of removing unused code on the games Dota 2 and Mad Max and on a small sample program.
+Our code to remove basic blocks is not robust enough to work for all tested games and only Dota 2 and Mad Max ran flawlessly, thus the other games were not benchmarked in this configuration.
+The small sample program runs a bytecode virtual machine in a shader using one large switch-case statement.
+Each case statement contains the code for one virtual instruction and the shader iterates through every instruction.
+The bytecode in our benchmark runs uses only a single instruction out of the 71 possible instructions.
+The code is transferred to the shader through a uniform buffer, consists of 128 instructions stored in \SI{4}{\kibi\byte} of memory and is executed two times until the result is used as the final fragment color.
+LLVM compiles the switch statement into a binary jump tree, therefore in each iteration of the virtual machine, multiple jumps are executed until the right case for the current instruction is found.
+
+Using PGO, we detect that all instructions in all but one case statements are never executed.
+Thus, in the optimized shader version we can remove all these basic blocks.
+This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has a lot less basic blocks than before.
+This improves the performance as seen in \cref{sub:eval_perf}.
+
+Apart from performance, we also want to analyze the register usage of shaders when removing unused blocks.
+This can help us to estimate gains of register spilling to reduce register pressure.
+When looking at registers, we have to differentiate between scalar and vector registers.
+Scalar registers are cheap in hardware compared to vector registers because we only need $\frac{1}{64}$ of them.
+Hence, we have more of them and the occupancy of shaders is mostly limited by vector registers.
+We also split our observations by shader type, we look at compute, vertex and pixel/fragment shaders separately.
+Each game is tested in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
+The figures starting at \cref{dia:registers_cs-vgpr} show the register usage, averaged over all shaders that fall into the category, e.g. vector registers in compute shaders in the first diagram.
+\input{figures/registers.tex}
+
+Mad Max uses a pixel shader with a lot of computations, but these computations never get executed in the benchmarks.
+Thus, when removing unused basic blocks, only a simple shader that checks an --- always false --- condition remains and a lot less vector registers are used.
+
+\input{figures/registers-scatter.tex}
 
 \subsection{Uniform Branches}
 \label{sub:eval_uniform_branches}
+Uniformity of conditions
 
 \input{figures/uniform-branches.tex}
 
@@ -67,7 +113,19 @@ For each game in three configurations: Running the game without any special opti
 \label{sub:eval_perf}
 Performance comparison in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
 
+The optimizations do not change the performance of the selected games by much.
+The order of basic blocks seems to have not a big impact on the performance.
+Some games, Ashes and F1 2017, are a bit slower when PGO is active while Warhammer and Mad Max are faster.
+Dota 2 does not have a significant change in performance.
+
 \input{figures/performance.tex}
+
+\begin{table}
+	\centering
+	\runtex{performance}
+	\captionof{table}{Performance of games with PGO}
+	\label{tab:performance}
+\end{table}
 
 \subsection{Overhead}
 \label{sub:overhead}
@@ -88,7 +146,7 @@ For Ashes of the Singularity, we cannot see much of a difference in performance.
 
 \input{figures/overhead.tex}
 
-% TODO Why ashes? Code size / BB-count
+Similar to the PGO benchmarks, Ashes shows the smallest difference.
 
 \begin{table}
 \centering
