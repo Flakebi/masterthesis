@@ -55,6 +55,10 @@ It only shows the range up to $10^5$ executions.
 In this range, the blocks are distributed more equal, still we see that most blocks are executed seldom while blocks with a higher counter value are rare.
 \input{figures/counter-values2.tex}
 
+%TODO
+Ashes as of 2019-09-01 shows graphical artifacts when using PGO.
+This hints that there is a bug in LLVM that only gets triggered when profile-guided optimizations are enabled.
+
 \subsection{Unused code}
 \label{sub:eval_unused}
 Looking at basic blocks which get never executed, we can remove them and study the changes in register usage and performance.
@@ -80,7 +84,7 @@ LLVM compiles the switch statement into a binary jump tree, therefore in each it
 
 Using PGO, we detect that all instructions in all but one case statements are never executed.
 Thus, in the optimized shader version we can remove all these basic blocks.
-This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has a lot less basic blocks than before.
+This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has fewer basic blocks than before.
 This improves the performance as seen in \cref{sub:eval_perf}.
 
 Apart from performance, we also want to analyze the register usage of shaders when removing unused blocks.
@@ -93,31 +97,59 @@ Each game is tested in three configurations: Running the game without any specia
 The figures starting at \cref{dia:registers_cs-vgpr} show the register usage, averaged over all shaders that fall into the category, e.g. vector registers in compute shaders in the first diagram.
 \input{figures/registers.tex}
 
+The average register usage stays the same when using PGO. Ashes sometimes uses a bit fewer registers than normal, F1 2017 sometimes more but the differences are small.
+Mad Max shows the greatest effect when removing unused code, it sometimes reduces the register usage by one register on average.
+A more detailed analysis of the effect of removing unused blocks in \cref{dia:registers_scatter} shows the register amount for each shader before and after removing blocks.
+Every dot represents a shader, the x-coordinate is the amount of used registers when compiling the shader with PGO, the y-coordinate are the registers when compiling with PGO and additionally removing blocks which never get executed.
+Most shaders lie on the diagonal, which means the amount of registers does not change.
+A few points are above the diagonal, so the compiler allocates more registers for them when unused code is removed.
+Some points are also below the diagonal, meaning they need fewer registers when blocks are removed.
 Mad Max uses a pixel shader with a lot of computations, but these computations never get executed in the benchmarks.
-Thus, when removing unused basic blocks, only a simple shader that checks an --- always false --- condition remains and a lot less vector registers are used.
-
+Thus, when removing unused basic blocks, only a simple shader that checks an always false condition remains and fewer vector registers are used.
+This shader can be seen in the lower right corner of \cref{dia:registers_scatter}.
 \input{figures/registers-scatter.tex}
+
+In summary, removing unused code can greatly reduce the register usage for some shaders.
+Unused code in general does not seem to be a problem for games, at least not from the perspective of register usage.
 
 \subsection{Uniform Branches}
 \label{sub:eval_uniform_branches}
-Uniformity of conditions
+Apart from basic block counters, we also examined the uniformity of certain variables.
+One type of variables that we further looked at are branch conditions.
+If a condition is uniform, the branch which is guarded by this condition is taken uniformly by the SIMD unit, if the condition is divergent, the unit has to take both branches after each other.
+
+At compile time, a variable can be classified as uniform or as divergent.
+If it is classified as uniform, we know that under all possible circumstances, the variable always contains the same value across all lanes.
+Usually, such variables are stored in scalar registers and computations on these variables use the scalar unit.
+If a variable is classified as divergent, the compiler is not able to proof that the variable always contains the same value on all lanes.
+It does not necessarily mean that the variable value differs on multiple lanes at runtime.
+Our instrumentation records the behavior at runtime and classifies a variable as \emph{dynamic uniform}, if it always contains the same value on all lanes or as divergent if not.
+\emph{Static uniform} variables are the ones where the compiler can proof that they are uniform.
 
 \input{figures/uniform-branches.tex}
 
+\Cref{dia:uniform_branches} shows us how conditions and branches are divided into the three categories.
+The \enquote{best} category are the static uniform branches.
+For these branches, the compiler can emit a simple branch instruction and the compiler knows that either all or none of the active lanes will take this branch.
+Conditions in the dynamic uniform category represent a branch where the compiler emitted additional code to support divergent branching.
+At runtime, this code is not used, the branch is always taken by all lanes uniformly.
+The performance wise worst case are divergent branches, in these cases, the compiler emits additional code like in the dynamic uniform case and at runtime, both branches are taken by different lanes, so the SIMD unit needs to execute both parts sequentially.
+
+With respect to the grading of the last paragraph, Ashes and F1 2017 are performing best because most of their branches are statically uniform and only a small fraction is divergent.
+We need to take into account though that this is a very coarse look at these games, we do not know the size and performance impact of the divergent branches, also sometimes divergent branches are inevitable.
+
 \subsection{Uniform Loads}
 \label{sub:eval_uniform_loads}
-
+Similar to the analysis of uniform conditions in the last section, we analysed \texttt{LoadInstr} instructions in LLVM.
+The uniformity of loaded memory values is shown in \cref{dia:uniform_loads}.
+It is important to know that the analyzed load instructions do not include buffer loads and image loads which are more complicated to analyze because they are indexed with multiple dimensions, can return multiple dimensions, are connected with a sampler, use mip mapping, etc.
 \input{figures/uniform-loads.tex}
 
 \subsection{Performance}
 \label{sub:eval_perf}
-Performance comparison in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
-
-The optimizations do not change the performance of the selected games by much.
-The order of basic blocks seems to have not a big impact on the performance.
-Some games, Ashes and F1 2017, are a bit slower when PGO is active while Warhammer and Mad Max are faster.
-Dota 2 does not have a significant change in performance.
-
+In addition to the previous analyses, an important part is of course the performance change when using profile-guided optimizations.
+To evaluate the performance of shaders, we run the games in three different configurations:Without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
+As before, removing blocks is only done for Dota 2 and Mad Max, the other games do not work with the current implementation.
 \input{figures/performance.tex}
 
 \begin{table}
@@ -127,13 +159,23 @@ Dota 2 does not have a significant change in performance.
 	\label{tab:performance}
 \end{table}
 
+The result is displayed in \cref{dia:performance} and \cref{tab:performance}.
+In general, the optimizations did not change the performance by a great amount.
+On Ashes and F1 2017 it even had a negative effect, these games got a little slower.
+Dota and Mad Max did not show a significant difference.
+Warhammer reduced the time per frame from \SI{65.98 \pm 0.18}{\milli\second} to \SI{65.31 \pm 0.13}{\milli\second} with PGO, which is an improvement of \SI{1 \pm 0.4}{\percent}.
+
+The order of basic blocks and other optimizations based on basic block counter seem to have a minor effect on performance.
+Removing unused blocks had no effect on the two tested games.
+
 \subsection{Overhead}
 \label{sub:overhead}
 To find hot paths, the instrumentation inserts counters into some basic blocks of a program. The counters introduce an overhead, compared to a non-instrumented version of the code.
 In the case of counting the frequency of basic block executions, the counters themselves are not sensitive to timing and thus not directly influenced by this overhead.
 But the code will run slower. In the case of a game, we will observe fewer frames per second than usual.
 If the benchmark, that we run with PGO instrumentation, runs for a fixed time, we will get lower basic block frequencies for fewer frames per second.
-Therefore, the measured counters may be less than the actual frequencies that we try to measure.
+Therefore, the measured counters may show fewer executions than the actual frequencies that we try to measure.
+This effect should not have an impact on the optimization results because the ratio of frequencies stays the same, no matter how fast or slow a game runs.
 
 We measured the overhead for two different games in different configurations: Dota 2 and Ashes of the Singularity. The baseline in \cref{dia:overhead} and \cref{tab:overhead} is a normal run of the game with no counters.
 The first tested configuration uses normal add instructions (i.e. no atomics) and increments by one per SIMD unit.
@@ -155,7 +197,6 @@ Similar to the PGO benchmarks, Ashes shows the smallest difference.
 \label{tab:overhead}
 \end{table}
 
-
 In some cases, it may be necessary to decrease the overhead of basic block counters. For example to use the instrumentation in production environments where high overheads are not acceptable.
 Sometimes, the overhead is high enough to trigger timeouts in the GPU driver, leading to game crashes. This is the case for the Infiltrator demo project of the Unreal Engine.
 
@@ -167,6 +208,9 @@ This means most executions will skip the increments, having even less overhead t
 A problem with this approach is that (e.g. vertex-) shaders that get executed only a few times, might not land on any of SIMD units where counting is activated and we get no statistics at all for them.
 This should only be a small problem because these shaders probably do not account for much of the computation time (as they are executed only a few times) and optimizing them cannot yield big benefits anyway.
 
-A more sophisticated technique that can speed up basic block counting tries to reduce the memory pressure by atomics without falling back to non-atomic counting. As we know, many atomic operations will simultaneously try to access the same memory location.
-We can reduce this pressure if we add multiple memory locations in different cache lanes for the same counter and spread the counting over these locations. As less atomic increments access the same memory, they do not have to wait as long as before and the program execution can continue faster.
-In the end, when shutting down the application, we have to add up all duplicated counters. This happens only once in the end for most applications so it adds not much overhead.
+A more sophisticated technique that can speed up basic block counting tries to reduce the memory pressure by atomics without falling back to non-atomic counting.
+As we know, many atomic operations will simultaneously try to access the same memory location.
+We can reduce this pressure if we add multiple memory locations in different cache lanes for the same counter and spread the counting over these locations.
+As fewer atomic increments access the same memory, they do not have to wait as long as before and the program execution can continue faster.
+In the end, when shutting down the application, we have to add up all duplicated counters.
+This happens only once in the end for most applications so it adds not much overhead.

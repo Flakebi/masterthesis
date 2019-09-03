@@ -19,6 +19,7 @@ When using PGO with \texttt{clang}, we use command line arguments to tell LLVM w
 To keep the usage and implementation of options simple, we use environment variables to pass filenames and other options.
 
 \subsection{Optimizations}
+\label{sub:optimizations}
 The goal of this thesis is to build the instrumentation, which is used in the first step of the PGO workflow. The instrumentation collects information at runtime and is needed to perform optimizations afterwards. Before we can start collecting data, we need to know which information we need. Therefore, it is part of this thesis is to find out which information can enable optimizations and should be collected and also how they can be collected.
 
 The needed data is defined by the optimizations we want to perform in step four. In the following, we list some possible optimizations and the respectively needed profiling data.

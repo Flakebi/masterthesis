@@ -81,7 +81,7 @@ If a shader uses a low amount of registers, it allows multiple other shaders to 
 If a shader uses a high amount of registers, this level of concurrency will be lower.
 The amount of shaders which can run simultaneously is called \emph{occupancy}.
 If the occupancy is too low, the GPU stalls when waiting for memory and will deliver degraded performance.
-Thus, the less registers a shader uses, the better the performance can get (up to a certain point).
+Thus, the fewer registers a shader uses, the better the performance can get (up to a certain point).
 
 \subsection{PGO in LLVM}
 \label{sub:pgo-background}

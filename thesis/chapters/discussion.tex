@@ -14,8 +14,9 @@ If we count executions per lane, instrumenting before or after structurization d
 After \texttt{StructurizeCFG}, more counters are needed, because there are more basic blocks and LLVM does not know anymore that only one block of an if-else construct will be entered.
 On the other hand if we count executions per unit, it does make a difference. More importantly, counting executions per unit before the CFG gets structurized leads to wrong results as LLVM expects than an else-block will not be entered if the if-block is executed. And this assumption is false for the per unit point of view.
 
-Summarizing, there are two different possibilities for instrumentation. First, counting per lane, where we should instrument before structurization because it leads to less counters and makes no difference otherwise.
-And second, counting per SIMD unit after structurization. These two opportunities represent the per lane and per unit view on a GPU.
+Summarizing, there are two different possibilities for instrumentation. First, counting per lane, where we should instrument before structurization because it leads to fewer counters and makes no difference otherwise.
+And second, counting per SIMD unit after structurization.
+These two opportunities represent the per lane and per unit view on a GPU.
 The decision for the instrumentation is the same as for actually using collected data. If we collect counters before the \texttt{StructurizeCFG} pass, we need to annotate the results at the same point in the pipeline.
 LLVM will propagate them when transforming the CFG in the structurization.
 If we collect counters after structurization, we also need to annotate them afterwards. This means, the collected data is only available to the compiler after the \texttt{StructurizeCFG} pass.
@@ -44,6 +45,13 @@ Benchmarks: Cuda SDK, Parboil, Rodinia, SHOC, Tensor (cite) but not Vulkan so we
 
 \subsection{Future Work}
 \label{sub:futurework}
+Early vs Late Analysis für Uniformity (Divergence Analysis ist nicht perfekt)
+Improve and fix removing basic blocks
+Find bug when using PGO with Ashes
+Test overhead reduction techniques
+Analyze uniformity of image and buffer loads (more complicated: intrinsics, have to compare multiple parameters)
+Implement Load hoisting and study its effects
+Implement more optimizations as proposed in \cref{sub:optimizations}.
 
 \subsection{Conclusion}
 \label{sub:conclusion}

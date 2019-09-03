@@ -1,4 +1,5 @@
 # 2019-09-02 – 2019-09-08
+- Finish first text version of evaluation
 - Add text in evaluation
 - Draw diagrams for register usage
 - Add diagrams about performance, finish overhead diagrams
