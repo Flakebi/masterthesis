@@ -61,7 +61,6 @@ else:
 
 \subsubsection{Hoist Texture Loads from Branches}
 \paragraph{Description} Texture fetches that happen in branches are sometimes moved before the branch by the compiler to be executed unconditionally. This has the effect that while we wait for the texture content to be loaded from memory, the shader can do computational work and does not have to wait. The optimization speeds up the execution if the branch condition for the texture fetch evaluates to true. However, if the condition evaluates to false, it will degrade performance because the GPU unnecessarily fetches memory and occupies bandwidth.
-% TODO Cite something?
 \paragraph{Background} Some GPU drivers are hoisting texture fetches out of branches, with guessing the probability that a branch is taken.
 \paragraph{Needed data} Branch probabilities
 \paragraph{Example}\ \\

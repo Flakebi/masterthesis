@@ -1,4 +1,5 @@
 # 2019-09-02 – 2019-09-08
+- Benchmark the switch-case vm
 - Finish first text version of evaluation
 - Add text in evaluation
 - Draw diagrams for register usage

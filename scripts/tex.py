@@ -5,7 +5,8 @@ from os import path
 from data import *
 from utils import *
 
-games = {"dota": "Dota 2", "ashes": "Ashes", "dow3": "Warhammer", "f12017": "F1 2017", "madmax": "Mad Max"}
+games = {"dota": "Dota 2", "ashes": "Ashes", "dow3": "Warhammer",
+	"f12017": "F1 2017", "madmax": "Mad Max", "switch": "Switch vm"}
 
 def overhead(args):
 	configs = ["", "gen-wave-late", "gen-wave-late-non_atomic"]
@@ -20,7 +21,7 @@ def overhead_diag(args, configs, legend):
 		print(f"\\addplot+[error bars/.cd,y dir=both,y explicit] coordinates {{")
 		for game in sorted(games.keys()):
 			key = f"{game}-{config}"
-			if key in bench:
+			if key in bench and game != "switch":
 				val = Value.avg([i * 1000 for i in bench[key]])
 				print(f"({game},{val.val}) +- (0,{val.error})")
 
@@ -36,7 +37,7 @@ def overhead_tab(args, configs, legend):
 		first = True
 		for config, leg in zip(configs, legend):
 			key = f"{game}-{config}"
-			if key in bench:
+			if key in bench and game != "switch":
 				avg_val = Value.avg(bench[key])
 
 				if first:
@@ -217,13 +218,13 @@ def unused_code_summary(args):
 	print(f"""
 \\begin{{axis}}[
 	ybar,
-	enlarge x limits=0.4,
+	enlarge x limits=0.2,
 	symbolic x coords={{{",".join([g for g, _ in used_games])}}},
 	xticklabels={{{",".join([games[g] for g, _ in used_games])}}},
 	xtick=data,
 	ylabel={{Unused blocks [\SI{{}}{{\percent}}]}},
 	ymin=0,
-	ymax=50,
+	ymax=119,
 	grid=both,
 	nodes near coords,
 	every node near coord/.append style={{rotate=90, anchor=west}},
@@ -349,7 +350,11 @@ def uniform(args, key):
 	for config in configs:
 		for game in games.keys():
 			counter = 0
-			for shader in uniformity[f"{game}-use-wave-late-uniform"]:
+			uni_key = f"{game}-use-wave-late-uniform"
+			if uni_key not in uniformity:
+				continue
+
+			for shader in uniformity[uni_key]:
 				counter += shader[config][key]
 
 			if not config in counters:
@@ -360,8 +365,9 @@ def uniform(args, key):
 	for config in configs:
 		print("\\addplot coordinates {")
 		for game in sorted(games.keys()):
-			count = counters[config][game] / amount[game] * 100
-			print(f"({game},{count})")
+			if game in counters[config]:
+				count = counters[config][game] / amount[game] * 100
+				print(f"({game},{count})")
 		print("};")
 
 def uniform_branches(args):

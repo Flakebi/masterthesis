@@ -142,7 +142,10 @@ As described in the design section, because of inaccuracies, not every unused ba
 Therefore, if a basic block is executed less than $< \SI{0.001}{\percent}$ of entry block executions, it is considered unused.
 This does not work perfectly for unused blocks in loops, where the inaccuracy could be greater, but it seems to suffice in our case.
 
-When removing unused blocks, every reference to such a block is replaced with a reference to a new basic block that only contains the unreachable intrinsic.
+Before removing an unused block, we need to remove all references to this block.
+If we find references in a conditional branch instruction, we can remove the reference to the unused block and transform the instruction to an unconditional branch.
+There are more complicated cases, e.g. an unconditional branch to the block we want to remove or references in a switch.
+In these cases, we replace the reference with a reference to a new basic block that only contains the unreachable intrinsic.
 Then, when no more references exist, the unused block is removed.
 
 \subsection{Uniform Branches}

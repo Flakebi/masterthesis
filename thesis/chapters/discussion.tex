@@ -41,17 +41,64 @@ While emulation can provide accurate information, we cannot run our application 
 Arm has something~\cite{Barton2013}.
 In the high-performance computing space, they used Lynx~\cite{Lynx} to instrument CUDA applications and automatically measure performance statistics~\cite{Farooqui2014}.
 
-Benchmarks: Cuda SDK, Parboil, Rodinia, SHOC, Tensor (cite) but not Vulkan so we cannot use it. VComputeBench claims to be a general, publicly available benchmark for GPGPU~\cite{Mammeri2018}. However, we were unable to find these benchmarks online and the author did not respond to our questions.
+Benchmarks: Cuda SDK, Parboil, Rodinia, SHOC, Tensor but not Vulkan so we cannot use it. VComputeBench claims to be a general, publicly available benchmark for GPGPU~\cite{Mammeri2018}. However, we were unable to find these benchmarks online and the author did not respond to our questions.
 
 \subsection{Future Work}
 \label{sub:futurework}
-Early vs Late Analysis für Uniformity (Divergence Analysis ist nicht perfekt)
-Improve and fix removing basic blocks
-Find bug when using PGO with Ashes
-Test overhead reduction techniques
-Analyze uniformity of image and buffer loads (more complicated: intrinsics, have to compare multiple parameters)
-Implement Load hoisting and study its effects
-Implement more optimizations as proposed in \cref{sub:optimizations}.
+This work does provide a good step into PGO on GPUs but of course it is not complete.
+This section will explain possible directions for future work in this field.
+
+When analyzing uniformity, we rely on the divergence analysis to give us information about uniform or divergent variables.
+As mentioned before, this analysis does not yield perfectly accurate results at all steps in the compilation pipeline.
+An opportunity for future work is to look into these problems, fix them where possible and find the best point to run this analysis.
+
+The uniformity analysis does only analyze conditions and values from memory at the moment.
+It would be interesting to expand this to image and buffer loads.
+They make up a considerable part of the memory accesses in a shader, but analyzing them is more difficult and did not fit into the time frame of this thesis.
+
+In addition to analyzing if a variable is uniform or not, we can also create statistics about how often a variable is uniform.
+If the divergent cases only make up a low fraction of the executions, it can still be beneficial to optimize for the common case.
+At the moment, we do not know how often this is the case.
+
+Based on the basic block counters, we removed basic blocks which never get executed.
+This worked good for two games but did not work for others.
+As removing basic blocks was meant as a simple and dirty test, this is not too surprising.
+However, it would be nice to have this test working for more games and collect more information about the effects.
+
+A related bug in LLVM are the artifacts which show up in Ashes when using PGO.
+We found one bug caused by PGO on GPUs in the \texttt{ControlHeightReduction} pass, we did not find the cause for this bug though.
+Before PGO can be used in production environments, this bug should be fixed and more games should be tested with these optimizations.
+
+Now, that we have methods to collect runtime data from shaders, this data can be used in the compiler to improve the optimization of shaders.
+This includes many of the optimizations which we suggested in \cref{sub:optimizations}.
+Hoisting loads out of conditional blocks for example is a promising candidate for rewarding optimizations.
+
+The existing optimizations were applied to five different games.
+The collected performance data give an impression of what we can expect of PGO on graphics cards.
+There exist many more games with different engines and they all use the GPU in a slightly different way.
+Thus, it would be interesting to compare the performance of PGO of more games and other Vulkan applications.
 
 \subsection{Conclusion}
 \label{sub:conclusion}
+To our knowledge, this is the first work which leverages profile-guided optimizations on GPUs.
+
+%Actual results.
+Basic block counting (implemented in LLVM, needed adjustments)
+-> unused code statistics
+Analyze register usage in different configurations
+Unused code: Registers and performance
+
+Register usage of Dota: Unchanged after removing nearly 20\% of the code
+Remove unused code: Switch-vm + \SI{21.06 \pm 0.10}{\percent}
+
+Condition/Branch uniformity
+Most often, the biggest category are static uniform branches
+varies a lot between games
+
+Uniformity of loads
+The fractions of the three categories for static uniform, dynamic uniform and divergent values vary a lot between games.
+Divergent loads are the smallest category, under \SI{35}{\percent}.
+For Ashes and Warhammer, dynamic uniform loads are the common case. For the rest of the games, static uniform loads make up more than half of the loads.
+
+In the end, we discussed if PGO instrumentation should be used before or after the CFG structurization.
+Result: After structurization is better

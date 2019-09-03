@@ -55,9 +55,10 @@ It only shows the range up to $10^5$ executions.
 In this range, the blocks are distributed more equal, still we see that most blocks are executed seldom while blocks with a higher counter value are rare.
 \input{figures/counter-values2.tex}
 
-%TODO
 Ashes as of 2019-09-01 shows graphical artifacts when using PGO.
 This hints that there is a bug in LLVM that only gets triggered when profile-guided optimizations are enabled.
+So far, we did not find the cause for this behavior.
+In previous tests with PGO, Ashes did not show these artifacts, so maybe this bug is connected with a recent update that Ashes received.
 
 \subsection{Unused code}
 \label{sub:eval_unused}
@@ -95,6 +96,7 @@ Hence, we have more of them and the occupancy of shaders is mostly limited by ve
 We also split our observations by shader type, we look at compute, vertex and pixel/fragment shaders separately.
 Each game is tested in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
 The figures starting at \cref{dia:registers_cs-vgpr} show the register usage, averaged over all shaders that fall into the category, e.g. vector registers in compute shaders in the first diagram.
+The register usage for our switch vm is not shown because it stays unchanged, only one vector register less is used and the possible occupancy does not change.
 \input{figures/registers.tex}
 
 The average register usage stays the same when using PGO. Ashes sometimes uses a bit fewer registers than normal, F1 2017 sometimes more but the differences are small.
@@ -104,10 +106,12 @@ Every dot represents a shader, the x-coordinate is the amount of used registers 
 Most shaders lie on the diagonal, which means the amount of registers does not change.
 A few points are above the diagonal, so the compiler allocates more registers for them when unused code is removed.
 Some points are also below the diagonal, meaning they need fewer registers when blocks are removed.
+\input{figures/registers-scatter.tex}
+
 Mad Max uses a pixel shader with a lot of computations, but these computations never get executed in the benchmarks.
 Thus, when removing unused basic blocks, only a simple shader that checks an always false condition remains and fewer vector registers are used.
 This shader can be seen in the lower right corner of \cref{dia:registers_scatter}.
-\input{figures/registers-scatter.tex}
+Surprisingly, Dota 2 does not show a great effect when removing code, even when nearly \SI{20}{\percent} of the basic blocks are removed.
 
 In summary, removing unused code can greatly reduce the register usage for some shaders.
 Unused code in general does not seem to be a problem for games, at least not from the perspective of register usage.
@@ -138,6 +142,10 @@ The performance wise worst case are divergent branches, in these cases, the comp
 With respect to the grading of the last paragraph, Ashes and F1 2017 are performing best because most of their branches are statically uniform and only a small fraction is divergent.
 We need to take into account though that this is a very coarse look at these games, we do not know the size and performance impact of the divergent branches, also sometimes divergent branches are inevitable.
 
+In general, static uniform branches form the biggest group, followed by dynamic uniform and divergent branches.
+It depends on the game, if the statically divergent branches are mostly uniform or divergent at runtime.
+In F1 2017 most are uniform and the minority is divergent while in Mad Max it is the other way around.
+
 \subsection{Uniform Loads}
 \label{sub:eval_uniform_loads}
 Similar to the analysis of uniform conditions in the last section, we analysed \texttt{LoadInstr} instructions in LLVM.
@@ -145,11 +153,14 @@ The uniformity of loaded memory values is shown in \cref{dia:uniform_loads}.
 It is important to know that the analyzed load instructions do not include buffer loads and image loads which are more complicated to analyze because they are indexed with multiple dimensions, can return multiple dimensions, are connected with a sampler, use mip mapping, etc.
 \input{figures/uniform-loads.tex}
 
+From the instrumented loads, divergent loads are the smallest category, staying under \SI{35}{\percent} in every game.
+For Ashes and Warhammer, dynamic uniform loads are the common case. For the rest of the games, static uniform loads make up more than half of the loads, leading to different distributions of load uniformity in ever game.
+
 \subsection{Performance}
 \label{sub:eval_perf}
 In addition to the previous analyses, an important part is of course the performance change when using profile-guided optimizations.
 To evaluate the performance of shaders, we run the games in three different configurations:Without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
-As before, removing blocks is only done for Dota 2 and Mad Max, the other games do not work with the current implementation.
+As before, removing blocks is only done for Dota 2, Mad Max and the switch vm, the other games do not work with the current implementation.
 \input{figures/performance.tex}
 
 \begin{table}
@@ -160,13 +171,16 @@ As before, removing blocks is only done for Dota 2 and Mad Max, the other games 
 \end{table}
 
 The result is displayed in \cref{dia:performance} and \cref{tab:performance}.
-In general, the optimizations did not change the performance by a great amount.
+In general, the optimizations did not change the performance of games by a great amount.
 On Ashes and F1 2017 it even had a negative effect, these games got a little slower.
 Dota and Mad Max did not show a significant difference.
 Warhammer reduced the time per frame from \SI{65.98 \pm 0.18}{\milli\second} to \SI{65.31 \pm 0.13}{\milli\second} with PGO, which is an improvement of \SI{1 \pm 0.4}{\percent}.
+The switch vm shows big improvements. When using PGO, it gets faster by \SI{7.34 \pm 0.10}{\percent}.
+When additionally removing unused blocks, it gets even faster by \SI{21.06 \pm 0.10}{\percent}.
 
-The order of basic blocks and other optimizations based on basic block counter seem to have a minor effect on performance.
+The order of basic blocks and other optimizations based on basic block counter seem to have a minor effect on the performance of games.
 Removing unused blocks had no effect on the two tested games.
+On the switch vm however, PGO as well as removing basic blocks had a remarkable effect.
 
 \subsection{Overhead}
 \label{sub:overhead}
