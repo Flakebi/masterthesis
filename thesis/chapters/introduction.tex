@@ -44,9 +44,9 @@ There exist static analysis tools that approximate this information~\cite{AMDSha
 Before we can start to implement more sophisticated optimizations in the compiler that rely on profiling data, we first need detailed profiling information. The focus of this thesis is to collect the necessary runtime information of GPU code, to use it for PGO. In the workflow of PGO, this is part of step one, namely inserting instrumentation when compiling code for the first time% in forever
 . The collected information from the second step can then be fed back into the compiler for use in optimizations.
 
-\subsection{Notation}
-\label{sub:notation}
-There exist quite a few different notations for the logical and physical parts of a GPU. Multiple vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
+\subsection{Terminology}
+\label{sub:terminology}
+There exist quite a few different terms for the logical and physical parts of a GPU. Multiple vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
 
 Throughout this paper, we will use the term \emph{SIMD lane} for a single work-item.
 For a group of work-items which are run on the same SIMD unit, we will use the expression \emph{SIMD unit}.

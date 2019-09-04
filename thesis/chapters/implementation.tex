@@ -26,7 +26,7 @@ When generating data, \texttt{\%m} can also be used to insert a unique id by LLV
 The following options can be changed by environment variables:
 \begin{itemize}
 	\item \texttt{AMDVLK\_PROFILE\_INSTR\_GEN}: Generate instrumentation in shader code, use e.g. \texttt{Pipeline\_\%i\_\%m.profraw}
-	\item \texttt{AMDVLK\_PROFILE\_INSTR\_USE}: Optimize shader code, use e.g. \texttt{Pipeline\_\%i.profdata}
+	\item \texttt{AMDVLK\_PROFILE\_INSTR\_USE}: Optimize shader code, e.g. \texttt{Pipeline\_\%i.profdata}
 	\item \texttt{AMDVLK\_PROFILE\_LATE}: Add PGO passes after structurization, default is before \texttt{StructurizeCFG}
 	\item \texttt{AMDVLK\_PROFILE\_PER\_WAVE}: Count executions per SIMD unit instead of per lane, only use this in combination with late instrumentation!
 	\item \texttt{AMDVLK\_PROFILE\_ANALYSIS}: Add analysis passes and write results to temporary file

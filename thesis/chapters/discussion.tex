@@ -81,24 +81,43 @@ Thus, it would be interesting to compare the performance of PGO of more games an
 \subsection{Conclusion}
 \label{sub:conclusion}
 To our knowledge, this is the first work which leverages profile-guided optimizations on GPUs.
+We started an introduction into the topic of PGO and GPUs and continued with our design and implementation to enable profile-guided optimizations on graphics cards.
+Benchmarks of five different games and statistics about collected metrics give insights into potential performance gains and conclude the topic.
 
-%Actual results.
-Basic block counting (implemented in LLVM, needed adjustments)
--> unused code statistics
-Analyze register usage in different configurations
-Unused code: Registers and performance
+For PGO, we used the basic block counting functionality of LLVM and adjusted the driver and LLVM to get working counters on GPUs.
+These counters give us information about unused basic blocks.
+We create statistics about the amount of unused blocks use this information to remove the unused basic blocks.
+In the game Dota 2, nearly \SI{20}{\percent} of the shader code are removed, in Warhammer even \SI{37}{\percent} and in the other games a let less.
+This leads to three different configurations for running games.
+We can run them without any changes in the compiler pipeline, we can enable the standard PGO options of LLVM by activating basic block counters, and we can additionally remove code which is never executed.
 
-Register usage of Dota: Unchanged after removing nearly 20\% of the code
-Remove unused code: Switch-vm + \SI{21.06 \pm 0.10}{\percent}
+In these three modes, we analyzed the performance of five different games and a small test program.
+The performance of the games mostly stayed the same, for some games it got a little faster when switching on PGO, for some it got slower.
+Removing unused blocks has no measurable effect on the performance of the tested games.
+Our small test application benefited most from removing unused code.
+Removing \SI{92}{\percent} of the basic blocks led to a speed improvement of \SI{21.06 \pm 0.10}{\percent}.
 
-Condition/Branch uniformity
-Most often, the biggest category are static uniform branches
-varies a lot between games
+An important property of shaders is the amount of registers they use.
+The register count limits the amount of shaders which can run in parallel on one SIMD unit and thus it is important for the overall performance.
+We looked at the used register usage of games in the same three configurations and found that it is mostly unchanged, even if a large fraction of blocks was removed for some games.
+Mad Max contains a single shader where removing unused code eliminates a large amount of code, leading to a lot lower register usage.
 
-Uniformity of loads
+In addition to counting basic blocks, this work contributes an instrumentation for LLVM which measures the uniformity of single variables.
+We use this instrumentation to test conditions.
+This tells us if branches are taken uniformly or not.
+Averaging over all shaders and conditions, we find that for most games, the biggest category are static uniform branches.
+This means the compiler can proof that these branches are always taken uniformly.
+The other branches are either always uniform at runtime or divergent.
+The fractions of these two categories varies between the games, there is no clear majority.
+
+Apart from conditions, we reuse this instrumentation to analyze the values of memory loads.a
 The fractions of the three categories for static uniform, dynamic uniform and divergent values vary a lot between games.
-Divergent loads are the smallest category, under \SI{35}{\percent}.
-For Ashes and Warhammer, dynamic uniform loads are the common case. For the rest of the games, static uniform loads make up more than half of the loads.
+Divergent loads form the smallest category with under \SI{35}{\percent} for every game.
+For Ashes and Warhammer, dynamic uniform loads are the common case.
+For the rest of the games, static uniform loads make up more than half of the loads.
 
-In the end, we discussed if PGO instrumentation should be used before or after the CFG structurization.
-Result: After structurization is better
+When writing passes in LLVM, we have to decide where in the compilation pipeline this pass should be inserted.
+In the case of counting basic blocks, we have two main possibilities.
+The default position when activating PGO is after most optimizations but before the CFG gets structurized.
+An alternative position is after structurization.
+As the CFG after structurization is closer to the actual control flow on the hardware, we come to the conclusion that the basic block counting instrumentation is better suited after structurization and that the counters should be incremented once per SIMD unit instead of counting all active lanes.
