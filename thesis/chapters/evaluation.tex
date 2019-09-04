@@ -2,7 +2,7 @@
 \bigsection{Evaluation}
 To evaluate our work, we run our analyses on various applications and also run benchmarks to compare the performance before and after using profile-guided optimizations.
 As we need Vulkan applications, we picked the following five games:
-Ashes of the Singularity which we will sometimes abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we will shorten to Warhammer.
+Ashes of the Singularity which is abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we shorten to Warhammer.
 We also looked at Vulkan benchmarks like vkmark, but this tool does not focus on shaders but instead on the rest of the graphics pipeline.
 Therefore, the shaders are simple and do not provide possibilities for PGO. E.g. using the default LLVM PGO on the shaders did not change a single instruction.
 The selected games have in common that they use the Vulkan API on Linux, and they have a benchmark which can be executed automatically and collects the performance data in a machine-readable form.
@@ -12,7 +12,7 @@ The games that we excluded are F1 2018, Serious Sam Fusion 2017 and Total War Sa
 Another game focused application which we looked at is the Infiltrator Demo Project of the Unreal Engine~\cite{Games2015}.
 This is not a real game, but a demo scene is played when the application starts to showcase the game engine.
 Also, it does not measure the performance to our knowledge, so we did not use it to test the performance of PGO, but we measured the amount of needed registers.
-Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we will describe further in \cref{sub:eval_unused}.
+Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we describe further in \cref{sub:eval_unused}.
 In total, more than $6 \frac{1}{2}\;\si{h}$ was spent running benchmarks.
 
 The performance numbers are expressed as frame times, i.e. how long does it take to compute a single frame for the game.
@@ -23,7 +23,7 @@ The measured times are always given with a standard error using a confidence lev
 An application like a game uses a lot of shaders, Ashes has 250 different shaders, Dota 2 compiles 877 shaders for the benchmark scene and Mad Max 734 shaders.
 Warhammer uses the least amount with 225 shaders while F1 2017 needs the most with 3220.
 These numbers do not necessarily represent the total number of shaders in the games, but only the amount of shaders which are compiled for the benchmark scene.
-A difference here is that Ashes compiles most of its shaders at the start of the game while Dota compiles shaders lazily when they are needed, so we only saw a fraction of the shaders that Dota contains, but we saw a greater fraction of the shaders in Ashes.
+A difference here is that Ashes compiles most of its shaders at the start of the game while Dota compiles shaders lazily when they are needed, so we only see a fraction of the shaders that Dota contains, but we see a greater fraction of the shaders in Ashes.
 When evaluating basic block counters, unused code and uniformity, we only consider shaders which were run at least once.
 For the register usage, we collect the statistics over all compiled shaders without taking into account if they have been needed or not.
 
@@ -31,7 +31,7 @@ For the register usage, we collect the statistics over all compiled shaders with
 \label{sub:eval_counters}
 Shaders are small programs compared to CPU programs, more like a single function.
 This means the number of basic blocks in a shader is low, usually around 20 or lower.
-After instrumenting the shaders and running a benchmark, we have a counter associated with each basic block which tells us how often each block was executed.
+After instrumenting the shaders and running a benchmark, each basic block is associated with a counter which tells us how often each block was executed.
 
 LLVM uses the counters e.g. for linearization. A performance comparison using the default optimizations in LLVM that rely on PGO data is discussed in \cref{sub:eval_perf}.
 An additional effect of PGO apart from linearization which can be observed when instrumenting before the \texttt{StructurizeCFG} pass is that most pixel shaders are marked as hot functions while vertex shaders are often marked as unlikely.
@@ -62,7 +62,7 @@ In previous tests with PGO, Ashes did not show these artifacts, so maybe this bu
 
 \subsection{Unused code}
 \label{sub:eval_unused}
-Looking at basic blocks which get never executed, we can remove them and study the changes in register usage and performance.
+Looking at basic blocks which get never executed, the compiler can remove them and study the changes in register usage and performance.
 The performance comparison can be found in \cref{sub:eval_perf}, this section shows statistics about the amount of unused code.
 The fraction of unused basic blocks ranges from \SI{0.22}{\percent} in Mad Max up to \SI{37.46}{\percent} unused blocks in in Warhammer.
 \Cref{dia:unused_by_game} shows a comparison of all analyzed games.
@@ -83,16 +83,16 @@ The bytecode in our benchmark runs uses only a single instruction out of the 71 
 The code is transferred to the shader through a uniform buffer, consists of 128 instructions stored in \SI{4}{\kibi\byte} of memory and is executed two times until the result is used as the final fragment color.
 LLVM compiles the switch statement into a binary jump tree, therefore in each iteration of the virtual machine, multiple jumps are executed until the right case for the current instruction is found.
 
-Using PGO, we detect that all instructions in all but one case statements are never executed.
-Thus, in the optimized shader version we can remove all these basic blocks.
+Using PGO, the compiler detects that all instructions in all but one case statements are never executed.
+Thus, in the optimized shader version all these basic blocks are gone.
 This leaves us with compare and jump instructions from the original binary jump tree but only one of the branch instructions is taken and the code has fewer basic blocks than before.
 This improves the performance as seen in \cref{sub:eval_perf}.
 
 Apart from performance, we also want to analyze the register usage of shaders when removing unused blocks.
 This can help us to estimate gains of register spilling to reduce register pressure.
 When looking at registers, we have to differentiate between scalar and vector registers.
-Scalar registers are cheap in hardware compared to vector registers because we only need $\frac{1}{64}$ of them.
-Hence, we have more of them and the occupancy of shaders is mostly limited by vector registers.
+Scalar registers are cheap in hardware compared to vector registers because only $\frac{1}{64}$ of them is needed.
+Hence, the hardware has more of them and the occupancy of shaders is mostly limited by vector registers.
 We also split our observations by shader type, we look at compute, vertex and pixel/fragment shaders separately.
 Each game is tested in three configurations: Running the game without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
 The figures starting at \cref{dia:registers_cs-vgpr} show the register usage, averaged over all shaders that fall into the category, e.g. vector registers in compute shaders in the first diagram.
@@ -123,7 +123,7 @@ One type of variables that we further looked at are branch conditions.
 If a condition is uniform, the branch which is guarded by this condition is taken uniformly by the SIMD unit, if the condition is divergent, the unit has to take both branches after each other.
 
 At compile time, a variable can be classified as uniform or as divergent.
-If it is classified as uniform, we know that under all possible circumstances, the variable always contains the same value across all lanes.
+If it is classified as uniform, the compiler knows that under all possible circumstances, the variable always contains the same value across all lanes.
 Usually, such variables are stored in scalar registers and computations on these variables use the scalar unit.
 If a variable is classified as divergent, the compiler is not able to proof that the variable always contains the same value on all lanes.
 It does not necessarily mean that the variable value differs on multiple lanes at runtime.
@@ -148,7 +148,7 @@ In F1 2017 most are uniform and the minority is divergent while in Mad Max it is
 
 \subsection{Uniform Loads}
 \label{sub:eval_uniform_loads}
-Similar to the analysis of uniform conditions in the last section, we analysed \texttt{LoadInstr} instructions in LLVM.
+Similar to the analysis of uniform conditions in the last section, we analyzed \texttt{LoadInstr} instructions in LLVM.
 The uniformity of loaded memory values is shown in \cref{dia:uniform_loads}.
 It is important to know that the analyzed load instructions do not include buffer loads and image loads which are more complicated to analyze because they are indexed with multiple dimensions, can return multiple dimensions, are connected with a sampler, use mip mapping, etc.
 \input{figures/uniform-loads.tex}
@@ -159,7 +159,7 @@ For Ashes and Warhammer, dynamic uniform loads are the common case. For the rest
 \subsection{Performance}
 \label{sub:eval_perf}
 In addition to the previous analyses, an important part is of course the performance change when using profile-guided optimizations.
-To evaluate the performance of shaders, we run the games in three different configurations:Without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
+To evaluate the performance of shaders, we run the games in three different configurations: Without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
 As before, removing blocks is only done for Dota 2, Mad Max and the switch vm, the other games do not work with the current implementation.
 \input{figures/performance.tex}
 
@@ -186,9 +186,9 @@ On the switch vm however, PGO as well as removing basic blocks had a remarkable 
 \label{sub:overhead}
 To find hot paths, the instrumentation inserts counters into some basic blocks of a program. The counters introduce an overhead, compared to a non-instrumented version of the code.
 In the case of counting the frequency of basic block executions, the counters themselves are not sensitive to timing and thus not directly influenced by this overhead.
-But the code will run slower. In the case of a game, we will observe fewer frames per second than usual.
-If the benchmark, that we run with PGO instrumentation, runs for a fixed time, we will get lower basic block frequencies for fewer frames per second.
-Therefore, the measured counters may show fewer executions than the actual frequencies that we try to measure.
+But the code will run slower. In the case of a game, there will be fewer frames per second than usual.
+If the benchmark, that is run with PGO instrumentation, runs for a fixed time, the basic block frequencies will be lower.
+Therefore, the measured counters may show fewer executions than the actual frequencies that should be obtained.
 This effect should not have an impact on the optimization results because the ratio of frequencies stays the same, no matter how fast or slow a game runs.
 
 We measured the overhead for two different games in different configurations: Dota 2 and Ashes of the Singularity. The baseline in \cref{dia:overhead} and \cref{tab:overhead} is a normal run of the game with no counters.
@@ -219,12 +219,12 @@ These race conditions lead to inaccurate counters. Not only do we get wrong prop
 
 Another overhead reduction can be achieved by skipping counting on most SIMD units and activate it e.g. only on \SI{5}{\percent} of the units.
 This means most executions will skip the increments, having even less overhead than the non-atomic variant while the rest of the executions gives accurate statistics.
-A problem with this approach is that (e.g. vertex-) shaders that get executed only a few times, might not land on any of SIMD units where counting is activated and we get no statistics at all for them.
+A problem with this approach is that (e.g. vertex-) shaders that get executed only a few times, might not land on any of SIMD units where counting is activated and no statistics at all are collected for them.
 This should only be a small problem because these shaders probably do not account for much of the computation time (as they are executed only a few times) and optimizing them cannot yield big benefits anyway.
 
 A more sophisticated technique that can speed up basic block counting tries to reduce the memory pressure by atomics without falling back to non-atomic counting.
 As we know, many atomic operations will simultaneously try to access the same memory location.
-We can reduce this pressure if we add multiple memory locations in different cache lanes for the same counter and spread the counting over these locations.
+We can reduce this pressure if multiple memory locations in different cache lanes are used for the same counter and they spread the counting over these locations.
 As fewer atomic increments access the same memory, they do not have to wait as long as before and the program execution can continue faster.
-In the end, when shutting down the application, we have to add up all duplicated counters.
+In the end, when shutting down the application, the driver has to add up all duplicated counters.
 This happens only once in the end for most applications so it adds not much overhead.

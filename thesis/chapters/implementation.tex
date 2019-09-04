@@ -1,7 +1,7 @@
 \clearpage
 \bigsection{Implementation}
 The implementation happens in several steps of the workflow and touches multiple parts of the driver.
-First, inside the LLVM compiler, we have to insert instrumentation instructions.
+First, the LLVM compiler inserts instrumentation instructions.
 LLVM already has the ability to emit instrumentation instructions for counting basic blocks and it can be activated with a few lines of code in LLPC.
 The next step is loading the compiled binary onto the GPU. Therefore, code in PAL needs to be adjusted as summarized in \cref{sub:loading}.
 After loading a shader, it is run. This part is unmodified by our work.
@@ -12,7 +12,7 @@ The more advanced analyses and implementations reuse this infrastructure and ext
 
 \subsection{Workflow}
 \label{sub:impl_workflow}
-As described in the design \cref{sub:workflow}, we use environment variables to pass options to the driver.
+As described in the design \cref{sub:workflow}, options are passed to the driver through environment variables.
 The concrete steps then are like following:
 \begin{enumerate}
 	\item Set \texttt{AMDVLK\_PROFILE\_INSTR\_GEN} and other variables to a profile file path
@@ -39,17 +39,17 @@ The detailed effect of these variables and how they are implemented is described
 
 \subsection{Compiling Shaders}
 \label{sub:compiling}
-When the environment variable \texttt{AMDVLK\_PROFILE\_INSTR\_GEN} is set, we insert instrumentation into shaders. There, we have to differ between two possibilities:
-In the default case, we replace any \texttt{\%i} in the filename with the pipeline id and provide this filename to the \texttt{PassManagerBuilder}.
-Otherwise, if the variable \texttt{AMDVLK\_PROFILE\_LATE} is set, we want to insert the instrumentation after the \texttt{StructurizeCFG} pass.
-Therefore, we add all needed PGO passes in the \texttt{AMDGPUTargetMachine} pass, after structurization.
+When the environment variable \texttt{AMDVLK\_PROFILE\_INSTR\_GEN} is set, the compiler inserts instrumentation into shaders. There, we have to distinguish between two possibilities:
+In the default case, any \texttt{\%i} in the filename is replaced with the pipeline id and this filename is provided to the \texttt{PassManagerBuilder}.
+Otherwise, if the variable \texttt{AMDVLK\_PROFILE\_LATE} is set, the instrumentation is inserted after the \texttt{StructurizeCFG} pass.
+Therefore, the \texttt{AMDGPUTargetMachine} pass adds all needed PGO passes after structurization.
 
-To use the most basic instrumentation with the \texttt{PassManagerBuilder}, we only have to set one of its member variables to the requested filename from within LLPC.
-To support more of our use cases, we added a member variable of the class \texttt{InstrProfOptions} to the \texttt{PassManagerBuilder}.
-This allows us to set more options from LLPC instead of within the \texttt{PassManagerBuilder} only.
+To use the most basic instrumentation with the \texttt{PassManagerBuilder}, LLPC only has to set one of its member variables to the requested filename.
+To support more of our use cases, the \texttt{PassManagerBuilder} has a new member variable of the class \texttt{InstrProfOptions}.
+This allows LLPC to set more options and we do not have to modify the \texttt{PassManagerBuilder}.
 One of these options decides if atomic counters are used or not.
-We set this property to true except if the environment variable \texttt{AMDVLK\_PROFILE\_NON\_ATOMIC} is set.
-Another change in the \texttt{PassManagerBuilder} for our implementation is that we add our new PGO passes if necessary.
+This property is set to true except if the environment variable \texttt{AMDVLK\_PROFILE\_NON\_ATOMIC} is set.
+Another change in the \texttt{PassManagerBuilder} for our implementation is that our new PGO passes are added if necessary.
 For example the analysis pass or the uniformity instrumentation generation pass.
 
 When instrumenting after structurization, \texttt{AMDGPUTargetMachine} adds all needed passes.
@@ -64,20 +64,20 @@ Our solution to save the collected data is described in \cref{sub:save}.
 After LLPC and LLVM in the AMDVLK driver compiled the code, PAL is responsible for loading the shader ELF files.
 This means copying the compiled code to GPU memory and running the shaders.
 The previous ELF support of PAL was limited as it only extracted the \texttt{.text} and \texttt{.data} section (code and data) and uploaded them to GPU memory.
-For PGO instrumentation, we also need to load additional data sections for counters and metadata.
+For PGO instrumentation, PAL also needs to load additional data sections for counters and metadata.
 As part of this work, we implemented loading all sections in an ELF file which are marked with write or execution flags.
 
 To increment counters, the code in the compiled object file references the counters in the data section.
 As the final addresses are not yet known at compile-time, LLVM adds relocation entries for them as described in \cref{sub:elf}.
 We implemented applying these relocations in PAL. The steps in PAL to load a shader are:
 \begin{enumerate}
-	\item Allocate memory for all sections on the GPU so we know their final addresses
+	\item Allocate memory for all sections on the GPU, so the driver know their final addresses
 	\item Copy sections to the allocated GPU memory by mapping the GPU memory to the CPU
 	\item Iterate through all relocation sections and perform the relocations
 \end{enumerate}
-When performing the relocations, we read from the loaded ELF file on the CPU and write to the GPU mapped memory.
-Reading from GPU mapped memory would mean we have to wait until the data arrives through the PCIe bus, which takes longer than reading from CPU memory.
-On the other hand, writing is fine because we do not have to wait until data is actually written, we can just continue, thus hiding the latency.
+When performing the relocations, PAL reads from the loaded ELF file on the CPU and write to the GPU mapped memory.
+Reading from GPU mapped memory would mean the CPU has to wait until the data arrives through the PCIe bus, which takes longer than reading from CPU memory.
+On the other hand, writing is fine because the CPU does not have to wait until data is actually written, it can just continue, thus hiding the latency.
 
 PAL's ELF parser contained a bug so it only supported \texttt{sh\_link} and \texttt{sh\_info} references to already loaded sections. This bug was fixed as part of this thesis.
 
@@ -85,8 +85,8 @@ PAL's ELF parser contained a bug so it only supported \texttt{sh\_link} and \tex
 
 \subsection{Fetching and Storing Data}
 \label{sub:save}
-After loading and running a shader, we have to save the counter values.
-As described in \cref{sub:save-design}, we cannot create the data files from inside the shader.
+After loading and running a shader, the driver must save the counter values.
+As described in \cref{sub:save-design}, the shader itself cannot create the data files.
 Instead, the driver has to fetch the data from GPU memory and write it to files.
 
 Most parts of the file writing code of LLVM are inside a library.
@@ -94,14 +94,15 @@ The library gets statically linked to the compiled program when PGO instrumentat
 This does not happen for shaders because they are never linked in the current implementation.
 We decided to link that library into PAL, so the driver can access the file writing code.
 The needed information to write a file are the addresses and sizes of the PGO related ELF sections.
-In PAL, we can read this information from the pipeline ELF file. We map the sections from the GPU memory to the CPU, write their addresses into global variables and call the LLVM PGO file dump function.
+PAL can read this information from the pipeline ELF file.
+Then, the driver maps the sections from the GPU memory to the CPU, writes their addresses into global variables and calls the LLVM PGO file dump function.
 We explicitly specify the filename and replace any \texttt{\%i} inside the name with the current pipeline hash.
 
 There is a single problem with counting on the GPU and dumping the data from the CPU:
 The metadata contains the absolute memory addresses of the counters and LLVM also dumps the absolute address of the counter section.
 The counter addresses are set through relocations when loading the ELF file which means they are virtual addresses on the \emph{GPU}.
 The address of the counter section on the other hand is a virtual address on the \emph{CPU} which maps to GPU memory. To get a correct dump file, these addresses need to refer to the same address space.
-Therefore, before writing the data to a file, we replace the GPU virtual addresses in the metadata with CPU virtual addresses.
+Therefore, before writing the data to a file, PAL replaces the GPU virtual addresses in the metadata with CPU virtual addresses.
 
 \subsection{Loading and Using Profile Data}
 \label{sub:load}
@@ -138,14 +139,14 @@ One pass which needs information about unused code is our analysis pass, which w
 Another pass is responsible for removing unused basic blocks if the environment variable \texttt{AMDVLK\_PROFILE\_REMOVE} is set.
 These passes run after the \texttt{PGOInstrumentationUse} pass so they have access to the block frequency information.
 
-As described in the design section, because of inaccuracies, not every unused basic block contains zero in the counter when we access it.
+As described in the design section, because of inaccuracies, not every unused basic block contains zero in the counter.
 Therefore, if a basic block is executed less than $< \SI{0.001}{\percent}$ of entry block executions, it is considered unused.
 This does not work perfectly for unused blocks in loops, where the inaccuracy could be greater, but it seems to suffice in our case.
 
-Before removing an unused block, we need to remove all references to this block.
-If we find references in a conditional branch instruction, we can remove the reference to the unused block and transform the instruction to an unconditional branch.
-There are more complicated cases, e.g. an unconditional branch to the block we want to remove or references in a switch.
-In these cases, we replace the reference with a reference to a new basic block that only contains the unreachable intrinsic.
+Before removing an unused block, all references to this block need to be removed.
+If a conditional branch instruction references the block, the reference to the unused block can be removed by transforming the instruction to an unconditional branch to the second destination.
+There are more complicated cases, e.g. an unconditional branch to the unused block or references in a switch.
+All these references are redirected to a new basic block that only contains the unreachable intrinsic.
 Then, when no more references exist, the unused block is removed.
 
 \subsection{Uniform Branches}
@@ -154,25 +155,25 @@ The design section for uniform branches explained that detecting the uniformity 
 The implementation details to find out if a variable is uniform or not are explained in \cref{sub:impl_uniform_vars}.
 This section explains peculiarities when applying this to conditions and branches.
 
-As with basic block counters, we can capture the uniformity of branches before or after the \texttt{StructurizeCFG} pass or corresponding to that, per SIMD lane or per unit.
-If we capture before structurizing, we should count the amount of lanes that are affected by a divergent variable.
-So when a SIMD unit currently has 14 active lanes and the variable of interest is not uniform across these lanes, we add 14 to the counter.
-On the other hand if we insert the counters after structurization, we want to count the units instead of lanes.
-This means for a non-uniform variable, we add one to the counter, no matter how many lanes are active.
+As with basic block counters, the uniformity of branches can be captured before or after the \texttt{StructurizeCFG} pass or corresponding to that, per SIMD lane or per unit.
+Before structurizing, we should count the amount of lanes that are affected by a divergent variable.
+So when a SIMD unit currently has 14 active lanes and the variable of interest is not uniform across these lanes, 14 is added to the counter.
+On the other hand, after structurization we want to count the units instead of lanes.
+This means for a non-uniform variable, the counter is incremented by one, no matter how many lanes are active.
 
 The uniformity of branches is a special case when using this instrumentation after structurization.
 The structurization is the pass which handles and eliminates divergent branch instructions, thus afterwards, every branch is statically known to be uniform.
-Hence, after the structurization pass ran, we cannot inspect the normal conditions of branches anymore because they do not represent the branches from the shader code.
+Hence, after the structurization pass ran, the normal conditions of branches cannot be inspected anymore because they do not represent the branches from the shader code.
 Instead, we have to take a look at what happens with conditions in the \texttt{StructurizeCFG} pass.
 The original conditions are used as an argument for the \texttt{amdgcn.if} intrinsic.
 This intrinsic returns a boolean that signals if the whole unit can skip the branch which is then used for the branch instruction.
-Therefore, if we are instrumenting branches before structurization, we directly instrument the condition arguments of branches.
-If we are instrumenting after structurization, we look at the argument of \texttt{amdgcn.if} intrinsics instead.
+Therefore, if branches are instrumented before structurization, the compiler directly instrument the condition arguments of branches.
+After structurization, it looks at the argument of \texttt{amdgcn.if} intrinsics instead.
 
 To find out, if a branch is statically known to be uniform, we use the \texttt{DivergenceAnalysis} before structurization.
 This analysis tells us for a condition, if the variable is uniform or divergent.
 In single cases, it may not work perfectly, e.g. if a function argument for the shader is not known to be uniform at this stage in the compilation pipeline but overall it is working good.
-After structurization, we know that if a block contains the \texttt{if} intrinsic, the condition is divergent.
+After structurization, if a block contains the \texttt{if} intrinsic, the condition is divergent.
 On the other hand, if a block contains neither the \texttt{if} intrinsic, nor an \texttt{amdgcn.else} or \texttt{amdgcn.loop} intrinsic, it must be uniform.
 At the moment, only ifs are instrumented after structurization, loops are ignored.
 
@@ -184,16 +185,16 @@ We can emit the same intrinsics as \texttt{PGOInstrumentationGen} and the counte
 We only have to take care that the counters for uniformity do not conflict with basic block counters.
 Thus, we assign the uniform counters to a new (nonexistent) function, with \texttt{-uniform} appended to the original function name.
 
-For example if we want to check if a variable \texttt{\%0} is uniform, we emit the following code:
+For example if the compiler wants to check if a variable \texttt{\%0} is uniform, it emits the following code:
 \begin{lstlisting}[caption={Check a variable for uniformity},language={[x86masm]Assembler}]
 %1 = tail call i32 @llvm.amdgcn.readfirstlane(i32 %0)
 ; The 33 is the comparison code for non-equal
-; We compare %0 != %1 and get the result for all lanes
+; Compare %0 != %1 and get the result for all lanes
 %2 = tail call i64 @llvm.amdgcn.icmp.i32(i32 %0, i32 %1, i32 33)
 %3 = icmp ne i64 %2, 0
 %4 = zext i1 %3 to i64
 ; This intrinsic also takes metadata, like the function name
-; We add %4 to the counter (0 if uniform, 1 if divergent)
+; Add %4 to the counter (0 if uniform, 1 if divergent)
 call void @llvm.instrprof.increment.step(i8* getelementptr inbounds ([23 x i8], [23 x i8]* @__profn__amdgpu_vs_main_uniform, i32 0, i32 0), i64 0, i32 18, i32 0, i64 %4)
 \end{lstlisting}
 
@@ -201,7 +202,7 @@ At the moment, we instrument conditions to find uniform branches and \texttt{Loa
 The interesting parts of a load instruction are the address --- we want to know if we can use a scalar load --- and the loaded memory value.
 This gives a coarse insight into how applications use memory loads and how diverse the content of their memory is.
 
-To create statistics about the uniformity of variables, we use the same analysis pass as for unused code.
+The same analysis pass as for unused code creates statistics about the uniformity of variables
 The \texttt{DivergenceAnalysis} tells us if a variable is statically known to be uniform.
 If a variable is not statically uniform, it is dynamically uniform if the counter is zero or divergent if the counter is unequal to zero.
 
@@ -224,7 +225,7 @@ We use these files to get the number of registers used by the shaders.
 
 \subsection{Per Unit Counting}
 \label{sub:impl_per_unit}
-In the usual case, when simple atomic counters are used, we get one atomic operation per lane.
+In the usual case, when simple atomic counters are used, one atomic operation per active lane is executed.
 This means each active lane will start an atomic add to the same memory location at the same time.
 These simultaneous atomics are quite slow and should be optimized to a single atomic operation per unit.
 When instrumenting before structurization, this could be accomplished by the atomic optimizer pass.
