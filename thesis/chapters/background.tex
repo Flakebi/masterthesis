@@ -1,6 +1,6 @@
 \clearpage
 \bigsection{Background}
-This section contains introductions into the hard- and software of graphics processors. Further we explain concepts that are used in the implementation, like the ELF format.
+This section introductes the hard- and software of graphics processors. Further we explain concepts that are used in the implementation, like the ELF format.
 
 \subsection{Graphics Processing Unit}
 To understand how profiling data can -- and cannot -- be collected on GPUs, a basic understanding of how code is run on graphics processors is needed.
@@ -109,7 +109,7 @@ This algorithm is implemented in the instrumentation profiling of LLVM, and auto
 
 \subsection{Structurizing the CFG}
 \label{sub:structurize}
-A single SIMD unit cannot execute divergent control. However, the shader code that the compiler gets is not in a form which can handle divergent branches if it is vectorized.
+A single SIMD unit cannot execute divergent control. However, the shader code that the compiler gets is not in a form which can handle divergent branches.
 Therefore, the compiler needs to change the \gls{cfg} in such a way, that it gets suitable for SIMD units and gracefully handles diverging control flow.
 In LLVM, this pass is called \texttt{StructurizeCFG}.
 

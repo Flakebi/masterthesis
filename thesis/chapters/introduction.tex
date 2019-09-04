@@ -88,8 +88,9 @@ One instrumentation inserts counters at \glspl{bb} which gives us information ab
 
 Accurate counters also allow detecting unused basic blocks that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code have an effect on the register allocation of shaders.
 
-A second instrumentation counts how often certain variables are uniform or divergent at runtime. A uniform variable has the same value on all active lanes on a SIMD unit, which permits optimizations that are impossible for divergent variables.
-The uniformity is important for branches because the GPU might need to execute both branches on a SIMD unit and needs to run them sequentially, one after the other.
+A second instrumentation counts how often certain variables are uniform or divergent at runtime. A uniform variable has the same value on all active lanes on a SIMD unit, the opposite is a divergent variable where the values differ across the lanes.
+Uniform variables permits optimizations that are impossible for divergent variables.
+E.g. for branches, the uniformity is important because the GPU might need to execute both branches on a SIMD unit and needs to run them sequentially, one after the other.
 We show statistics about the uniformity of branches in games.
 Additionally, our instrumentation allows us to analyze the uniformity of memory loads, which we present too.
 

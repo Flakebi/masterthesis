@@ -11,7 +11,8 @@ After this pass, the control-flow graph contains the per SIMD unit view, where a
 It is important to note that the per unit perspective only applies to the CFG after this pass. All instructions apart from branch instructions stay the same and exhibit the per lane view.
 
 For profile-guided optimizations, the compiler can instrument the CFG before or after structurization. In the case of basic block counters, this will lead to different results.
-Before structurization, it is impossible to run through both branches of an if-else construct. After structurization, it is still impossible \emph{per lane}, but it is possible in the \emph{per unit} perspective.
+Before structurization, it is impossible to run through both branches of an if-else construct.
+After the CFG is structurized, it is still impossible \emph{per lane}, but it is possible from the \emph{per unit} perspective.
 If executions are counted per lane, instrumenting before or after structurization does not make a semantic difference.
 After \texttt{StructurizeCFG}, more counters are needed, because there are more basic blocks and LLVM does not know anymore that only one block of an if-else construct will be entered.
 On the other hand if executions are counted per unit, it does make a difference. More importantly, counting executions per unit before the CFG gets structurized leads to wrong results as LLVM expects than an else-block will not be entered if the if-block is executed. And this assumption is false for the per unit point of view.
@@ -24,32 +25,58 @@ LLVM will propagate them when transforming the CFG in the structurization.
 The same applies to counting after structurization: The compiler must also annotate the counters after structurization.
 This means, the collected data is only available to the compiler after the \texttt{StructurizeCFG} pass.
 Looking at CPUs, LLVM applies instrumentation and usage of counters at the end of the pipeline, after most optimizations.
-This makes sense because the counters are used for linearization and getting data about an unoptimized CFG is not useful if the final CFG that needs to be linearized looks completely different.
+This makes sense because the counters are used for linearization and getting data about an unoptimized CFG is not useful if the final CFG which needs to be linearized looks completely different.
 
 The advantage of a per lane instrumentation is simplicity. The \texttt{PassManagerBuilder} can insert the needed passes easily (it runs before structurization) and we do not need to adjust any instrumentation code because the LLVM IR exhibits the per lane view.
 
 To use per unit instrumentation, we need to add passes manually after structurization and cannot use the \texttt{PassManagerBuilder}.
 Additionally, the PGO instrumentation pass needs to be changed such that the increment instruction is only run on one lane and not on all lanes.
 An advantage of the per unit view is that it is more similar to the code that gets executed on the hardware in the end.
-For example compare two basic blocks: One always gets run by the whole unit, for the other only a single lane is active, e.g. to aggregate a result over the whole unit.
+For example compare two basic blocks: One always gets run by the whole unit, for the other one only a single lane is active, e.g. to aggregate a result over the SIMD unit.
 When using per lane counting, the first basic block will be weighted a lot more important than the second one.
 Per unit counting provides a more accurate view, both blocks are executed the same amount of times, so they are equally important. The amount of active lanes does not matter.
 
 \subsection{Related Work}
 \label{sub:relatedwork}
-% TODO
-A part of this work is to profile shaders. There are many GPU profiling tools~\cite{UnityGPUProfiler, UnrealGPUProfiling, MSGPUUsage, PGI2014}.
-Most of them show the needed computation time down to single draw calls or overall GPU performance statistics like occupancy\footnote{The amount of simultaneously executed threads on a \gls{cu}, hiding memory latency},used memory bandwidth and compute power~\cite{NvidiaNsight, NvidiaShaderPerf, AMDShaderAnalyzer}.
-There are only few, which show detailed information about the inside of shaders. E.g GPUOcelot can trace single instructions in shaders when emulating CUDA applications on the GPU~\cite{GPUOcelot, Lakshminarayana2010}. Pyramid is an emulator and shader analyzer for various architectures, including AMD GCN~\cite{Pyramid}.
-While emulation can provide accurate information, the application will run a lot slower as the CPU has much less computational power.
-Arm has something~\cite{Barton2013}.
-In the high-performance computing space, they used Lynx~\cite{Lynx} to instrument CUDA applications and automatically measure performance statistics~\cite{Farooqui2014}.
+This work focuses on the profiling of shaders to get information for optimizations.
+There are many GPU profiling tools~\cite{PGI2014} that can provide information to optimize a graphics application.
+Some of them are integrated into a development environment~\cite{MSGPUUsage} or part of a game engine that allows writing custom shaders~\cite{UnityGPUProfiler, UnrealGPUProfiling}.
+Others again are developed by hardware manufacturers~\cite{NvidiaNsight, NvidiaShaderPerf, AMDShaderAnalyzer}.
 
-Benchmarks: Cuda SDK, Parboil, Rodinia, SHOC, Tensor but not Vulkan, so we cannot use it. VComputeBench claims to be a general, publicly available benchmark for GPGPU~\cite{Mammeri2018}. However, we were unable to find these benchmarks online and the author did not respond to our questions.
+These tools are able to show performance statistics like occupancy, used memory bandwidth and compute power.
+They also show the time that is needed per shader or per draw call.
+But there are only few tools which are able to show detailed information that look inside shaders.
+The information which cannot be collected by most tools is e.g. how often each instruction is executed or how much time is spent for single instructions.
+
+One of the tools that can collect metrics like counters is GPUOcelot~\cite{GPUOcelot, Lakshminarayana2010}.
+It can trace single instructions in shaders when emulating CUDA applications.
+Pyramid is another emulator and shader analyzer for various architectures, including the AMD GCN architecture that we examined in detail in this work~\cite{Pyramid}.
+While emulation can provide accurate information, an emulated application will run a lot slower as the CPU has less computational power.
+This makes it harder to find a suited benchmark for collecting runtime information.
+A developer always has to take into account that it will take a multiple of the time to emulate the benchmark on the CPU than to run it on the GPU.
+The collected information however have high quality and once an emulator is working it is easy to collect all kinds of information.
+
+Tools which collect detailed information about the execution of shaders exist for example for Arm GPUs~\cite{Barton2013}.
+In the high-performance computing space, Lynx~\cite{Lynx} is used to instrument CUDA applications and automatically measure performance statistics~\cite{Farooqui2014}.
+An interesting work by \citet{Stephenson2015} makes it possible to insert instrumentation at any point into shader code.
+They use this to insert counters, analyze memory access patterns and even for value profiling.
+The instrumentation part is similar to this work, a difference is that their work did not include using this information for automatic compiler optimizations.
+
+The GPU space developed a few sets of standard benchmarks which can be used to create performance comparisons.
+For example Parboil, Rodinia, SHOC and Tensor are sets of benchmarks which are regularly used.
+In this work, we focused on the AMDVLK Vulkan driver for AMD GPUs but these benchmarks are not yet usable for Vulkan.
+Thus we are not able to use them for performance tests.
+There is also a Vulkan benchmark set called VComputeBench, which claims to be a general, publicly available benchmark for GPGPU~\cite{Mammeri2018}.
+However, we were unable to find these benchmarks online and the author did not respond to our questions.
+Therefore, we cannot include it in our benchmarks.
+The vkmark Vulkan benchmarks~\cite{vkmark} are available publicly though this tool does not focus on shaders but on the rest of the graphics pipeline.
+Therefore, the shaders are simple and do not provide possibilities for PGO.
+E.g. using the default LLVM PGO on the shaders did not change a single instruction.
+Thus, we decided to not include it in our benchmark list.
 
 \subsection{Future Work}
 \label{sub:futurework}
-This work does provide a good step into PGO on GPUs but of course it is not complete.
+This work does provide a good step into PGO on GPUs but of course it does not exhaustively implement and evaluate PGO.
 This section will explain possible directions for future work in this field.
 
 When analyzing uniformity, the divergence analysis provides information about uniform or divergent variables.
@@ -62,7 +89,7 @@ They make up a considerable part of the memory accesses in a shader, but analyzi
 
 In addition to analyzing if a variable is uniform or not, we can also create statistics about how often a variable is uniform.
 If the divergent cases only make up a low fraction of the executions, it can still be beneficial to optimize for the common case.
-At the moment, we do not know how often this is the case.
+At the moment, we do not know how often a variable is uniform or not.
 
 Based on the basic block counters, the compiler removed basic blocks which never get executed.
 This worked good for two games but did not work for others.
@@ -70,7 +97,7 @@ As removing basic blocks was meant as a simple and dirty test, this is not too s
 However, it would be nice to have this test working for more games and collect more information about the effects.
 
 A related bug in LLVM are the artifacts which show up in Ashes when using PGO.
-We found one bug caused by PGO on GPUs in the \texttt{ControlHeightReduction} pass, we did not find the cause for this bug though.
+We found one bug caused by PGO on GPUs in the \texttt{ControlHeightReduction} pass, we did not find the cause for the bug with Ashes though.
 Before PGO can be used in production environments, this bug should be fixed and more games should be tested with these optimizations.
 
 Now, that collecting runtime data from shaders works, this data can be used in the compiler to improve the optimization of shaders.
@@ -86,26 +113,28 @@ Thus, it would be interesting to compare the performance of PGO of more games an
 \label{sub:conclusion}
 To our knowledge, this is the first work which leverages profile-guided optimizations on GPUs.
 We started this thesis with an introduction into the topic of PGO and GPUs and continued with our design and implementation to enable profile-guided optimizations on graphics cards.
-Benchmarks of five different games and statistics about collected metrics gave insights into potential performance gains and conclude the topic.
+Benchmarks of five different games and statistics about collected metrics give insights into potential performance gains and conclude the topic.
 
-The profile-guided optimizations use the basic block counting functionality of LLVM and adjusted the driver and LLVM to get working counters on GPUs.
+The profile-guided optimizations use the basic block counting functionality of LLVM. We adjusted the driver and parts of LLVM to get working counters on GPUs.
 These counters give information about unused basic blocks.
-We use this information to create statistics about the amount of unused blocks and to remove the unused basic blocks.
+We use this information to create statistics about the amount of unused blocks and to remove unused basic blocks.
 This leads to three different configurations for running games.
-The first is to run them without any changes in the compiler pipeline, another one is to enable the standard PGO options of LLVM by activating basic block counters, and finally the compiler can additionally remove code which is never executed.
+The first is to run them without any changes in the compiler pipeline, another one is to enable the standard PGO options of LLVM using basic block counters, and finally the compiler can additionally remove code which is never executed.
 
 For these three modes, we analyze the performance of five different games and a small test program.
 In the game Dota 2, nearly \SI{20}{\percent} of the shader code are removed, in Warhammer even \SI{37}{\percent}.
 The other games have a lower fraction of unused blocks.
-The performance of the games mostly stays the same, for some games it got a little faster when switching on PGO, for some it got slower.
+The performance of the games mostly stays the same, some games are running a little faster when switching on PGO, some are slower.
 Removing unused blocks has no measurable effect on the performance of the tested games.
 Our small test application benefits most from deleting unused code.
 Removing \SI{92}{\percent} of the basic blocks leads to a speed improvement of \SI{21.06 \pm 0.10}{\percent}.
 
+The overhead of instrumenting all shaders with basic block counters ranges from \SI{0}{\percent} to \SI{43}{\percent}, with an average of \SI{16}{\percent} overhead.
+
 An important property of shaders is the amount of registers they use.
 The register count limits the amount of shaders which can run in parallel on one SIMD unit and thus it is important for the overall performance.
 Looking at the register usage of games in the same three configurations shows that it is mostly unchanged, even if a large fraction of blocks is removed for some games.
-Mad Max contains a single shader though, where removing unused code eliminates a large amount of code, leading to a lot lower register usage.
+Mad Max contains a single shader, where removing unused code eliminates a large amount of code, leading to a lot lower register usage.
 
 In addition to counting basic blocks, this work contributes an instrumentation for LLVM which measures the uniformity of single variables.
 One use case for this instrumentation is to test conditions.
