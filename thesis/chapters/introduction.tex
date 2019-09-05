@@ -5,19 +5,18 @@ We follow that the knowledge of runtime information is beneficial for the perfor
 
 \subsection{Motivation}
 \label{sub:motivation}
-\paragraph{History of GPUs} \Glspl{gpu} started as simple co-processors, able to draw polygons on a frame buffer, which was displayed on a screen, but relying on the \gls{cpu} for creating a list of polygons and giving detailed instructions to the GPU on how to draw them.
-After some time, more parallelism was introduced and functionality was added to move more computations from the CPU to the GPU.
-GPUs became capable of drawing complex images for games with light and shadows, though the functionality, how to compute light and shadows, was baked into the hardware.
-It could only be configured by the CPU, but games were not able to change more than dynamic parameters.
-As the pipeline was not programmable, it was called a \emph{fixed function pipeline}.
+\paragraph{History of GPUs} \Glspl{gpu} started as simple co-processors that were able to draw basic primitives such as lines and triangles onto a frame buffer which was displayed on a screen.
+Vertex coordinates had to be computed on the \gls{cpu}, which fed the so called \emph{fixed function pipeline} on the GPU.
+The GPU rasterized the primitives and determined the colors of the resulting pixels by interpolating vertex colors or by simple texturing.
+Over time, the capabilities of GPUs increased. The fixed function pipeline was first made increasingly configurable by adding new functions such as multi-texturing and eventually it was made programmable by allowing pixel shaders.
+A pixel shader is a programs which determines the color of each rasterized pixel and it is executed by general purpose processing units on the GPU.
+At the same time, vertex processing was moved to the GPU and made programmable using the same processing units.
+The overall computational power of GPUs increased substantially by providing increasing memory bandwidth and by instantiating numerous processing units operating in parallel.
+This computational power combined with their ubiquity made GPUs attractive for applications outside of real-time rendering.~\cite{McClanahan2010}
 
-More and more functionality was added to graphics processors and the hardware changed from a very limited set of hardware backed functions to a general purpose processor model.
-This enabled game developers --- among others --- to write small programs called shaders, which are run on the GPU.
-Nowadays, the computing power of GPUs stems from their large amount of general purpose arithmetical processing units and the functionality which was previously baked into the hardware is now implemented in software.~\cite{McClanahan2010}
-
-Soon after the possibility to program GPUs with shaders came up, people started to use them for other purposes than graphics, also called \gls{gpgpu}.
-While this was not the primary purpose of shaders, multiple APIs and libraries are now providing good support to use GPUs for many purposes.
-Today, the highly parallel computing power is used for games, high performance computing and even things like offloading computations from spreadsheets or databases~\cite{Lillqvist2016, Meraji2015}.
+While this \gls{gpgpu} usage was not the primary purpose of shaders, multiple APIs and libraries came up to provide good support using GPUs for different purposes.
+GPUs soon gained the ability to run compute shaders (also called compute kernels) outside the graphics pipeline, but using the same general purpose processing units.
+Nowadays, the computing power of GPUs stems from their large amount of general purpose arithmetical processing units and the parallel computing power is used for games, high performance computing and even tasks like offloading computations from spreadsheets or databases~\cite{Lillqvist2016, Meraji2015}.
 
 \paragraph{Optimization} In general, code should run as fast as possible. This saves time, energy and money or allows us to handle larger problems.
 To achieve this goal, code runs through multiple stages of compilation and optimization before it is executed.

@@ -95,7 +95,12 @@ This does not happen for shaders because they are never linked in the current im
 We decided to link that library into PAL, so the driver can access the file writing code.
 The needed information to write a file are the addresses and sizes of the PGO related ELF sections.
 PAL can read this information from the pipeline ELF file.
-Then, the driver maps the sections from the GPU memory to the CPU, writes their addresses into global variables and calls the LLVM PGO file dump function.
+
+When a pipeline gets destroyed because the application does not need it anymore, PAL writes the collected counter data to disk.
+However, not all games destroy pipelines in the end, some just quit.
+To get the counter data for these games, we start a background thread which dumps the counter data every ten seconds.
+A problem with this approach is that collected counters can be inconsistent when a shader is in use while the data is dumped.
+To collect counters, the driver maps the sections from the GPU memory to the CPU, writes their addresses into global variables and calls the LLVM PGO file dump function.
 We explicitly specify the filename and replace any \texttt{\%i} inside the name with the current pipeline hash.
 
 There is a single problem with counting on the GPU and dumping the data from the CPU:
