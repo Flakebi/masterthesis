@@ -402,6 +402,46 @@ coordinates {""")
 
 	print("};")
 
+def get_occupancy(regs):
+	max_regs = 256
+
+	# Round registers up to a multiple of 4
+	regs = (regs + 3) // 4 * 4
+	return max_regs // regs
+
+def register_occupancy(args):
+	# Analyze vgprs only
+	xconfig = "use-wave-late"
+	yconfig = "use-wave-late-remove"
+	indices = [0, 2, 4]
+	games = ["dota", "madmax"]
+
+	data_size = 10
+	print(f"""
+\\addplot [matrix plot*,point meta=explicit,mesh/cols={data_size},mesh/rows={data_size}]
+table [meta index=2,header=false,row sep=\\\\] {{""")
+	data = [[0 for _ in range(data_size)] for _ in range(data_size)]
+	for game in games:
+		xdata = registers[f"{game}-{xconfig}"]
+		ydata = registers[f"{game}-{yconfig}"]
+		for k in xdata.keys():
+			if k not in ydata:
+				continue
+
+			# Count of shader types used in the pipeline
+			for i in indices:
+				if xdata[k][i] != 0:
+					x = get_occupancy(xdata[k][i])
+					y = get_occupancy(ydata[k][i])
+					if y <= data_size and x <= data_size:
+						data[y - 1][x - 1] += 1
+
+	for y, row in enumerate(data):
+		for x, val in enumerate(row):
+			print(f"{x + 1}\t{y + 1}\t{val}\\\\")
+
+	print("};")
+
 def data(args):
 	xconfig = "use-wave-late"
 	indices = [0, 2, 4]
@@ -432,6 +472,7 @@ def main():
 		"uniform-branches": uniform_branches,
 		"uniform-loads": uniform_loads,
 		"register-scatter": register_scatter,
+		"register-occupancy": register_occupancy,
 		"data": data,
 	}
 

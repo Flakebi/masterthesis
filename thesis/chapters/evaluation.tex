@@ -107,10 +107,24 @@ A few points are above the diagonal, so the compiler allocates more registers fo
 Some points are also below the diagonal, meaning they need fewer registers when blocks are removed.
 \input{figures/registers-scatter.tex}
 
-Mad Max uses a pixel shader with a lot of computations, but these computations never get executed in the benchmarks.
+In one case, Mad Max uses a pixel shader with a lot of computations, but these computations never get executed in the benchmarks.
 Thus, when removing unused basic blocks, only a simple shader that checks an always false condition remains and fewer vector registers are used.
 This shader can be seen in the lower right corner of \cref{dia:registers_scatter}.
 Surprisingly, Dota 2 does not show a great effect when removing code, although nearly \SI{20}{\percent} of the basic blocks are removed.
+
+The important metric that builds upon the number of used registers is the occupancy.
+If fewer registers are used, the occupancy gets higher and the GPU can hide memory latency better.
+The optimal occupancy is circa at 10 parallel shader executions per SIMD unit~\cite{Aaltonen2017}, so we focus on shaders with low occupancy.
+The amdgpu register allocator in LLVM optimizes for occupancy, which means that no shader should get worse occupancy when applying more optimizations.
+The occupancies of shaders in Dota 2 and Mad Max are displayed in \cref{dia:registers_occupancy}.
+In this diagram, the occupancy is based only on vector registers and ignores scalar registers.
+On some hardware, scalar registers can also limit the occupancy but this depends on the hardware and is only seldom the case, thus we ignore scalar registers here.
+Most shaders are on the diagonal, so the occupancy does not change.
+Some are on the upper-left half, which means that removing unused basic blocks increases the occupancy.
+E.g. instead of four shaders, five shaders can be run in parallel.
+Finding shaders where unused code limits the occupancy is exactly the goal of this test.
+For a single shader, the compiler allocates more registers so that the occupancy is reduced.
+\input{figures/registers-occupancy.tex}
 
 In summary, removing unused code can greatly reduce the register usage for some shaders.
 Unused code, in general, does not seem to be a problem for games, at least not from the perspective of register usage.
