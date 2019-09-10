@@ -1,3 +1,7 @@
+# 2019-09-09 – 2019-09-15
+- Correct many, many small mistakes in the text
+- Try to remove code from the infiltrator demo but it is not working
+
 # 2019-09-02 – 2019-09-08
 - Benchmark the switch-case vm
 - Finish first text version of evaluation

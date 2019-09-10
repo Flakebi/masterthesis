@@ -6,7 +6,8 @@ from data import *
 from utils import *
 
 games = {"dota": "Dota 2", "ashes": "Ashes", "dow3": "Warhammer",
-	"f12017": "F1 2017", "madmax": "Mad Max", "switch": "Switch vm"}
+		"f12017": "F1 2017", "madmax": "Mad Max", "switch": "Switch vm",
+		"infiltrator": "Unreal Infiltrator"}
 
 def overhead(args):
 	configs = ["", "gen-wave-late", "gen-wave-late-non_atomic"]
@@ -218,10 +219,11 @@ def unused_code_summary(args):
 	print(f"""
 \\begin{{axis}}[
 	ybar,
-	enlarge x limits=0.2,
+	enlarge x limits=0.1,
 	symbolic x coords={{{",".join([g for g, _ in used_games])}}},
 	xticklabels={{{",".join([games[g] for g, _ in used_games])}}},
 	xtick=data,
+	xticklabel style={{text width=2.5cm,align=center}},
 	ylabel={{Unused blocks [\SI{{}}{{\percent}}]}},
 	ymin=0,
 	ymax=119,

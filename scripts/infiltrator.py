@@ -17,6 +17,6 @@ def run(env, remove_cache, debug, sig):
 		args = ["Engine/Binaries/Linux/UE4Game"]
 
 	subprocess.run(args + ["../../../InfiltratorDemo/InfiltratorDemo.uproject"],
-		check=True, env={**env, **dict(os.environ)}, cwd="/mnt/bigdata/Dateien/Programme/Games/InfiltratorDemo")
+		check=True, env={**dict(os.environ), **env}, cwd="/mnt/bigdata/Dateien/Programme/Games/InfiltratorDemo")
 	time = 1
 	return RunResult(time)

@@ -22,7 +22,7 @@ def run(env, remove_cache, debug, sig):
 		for k, v in env.items():
 			f.write(f"export {k}='{v}'\n")
 
-	subprocess.run(args, check=True, env={**env, **dict(os.environ)})
+	subprocess.run(args, check=True, env={**dict(os.environ), **env})
 	with subprocess.Popen(args, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True,
 		env=env) as p, io.StringIO() as buf:
 

@@ -1,42 +1,42 @@
 %\clearpage
 \bigsection{Introduction}
 This section motivates the optimization of code running on the \gls{gpu} and explains why runtime analysis is needed for some optimizations.
-We follow that the knowledge of runtime information is beneficial for the performance of \gls{gpu} programs. In the end we list our contributions.
+We follow that the knowledge of runtime information is beneficial for the performance of \gls{gpu} programs. In the end, we list our contributions.
 
 \subsection{Motivation}
 \label{sub:motivation}
 \paragraph{History of GPUs} \Glspl{gpu} started as simple co-processors that were able to draw basic primitives such as lines and triangles onto a frame buffer which was displayed on a screen.
-Vertex coordinates had to be computed on the \gls{cpu}, which fed the so called \emph{fixed function pipeline} on the GPU.
+Vertex coordinates had to be computed on the \gls{cpu}, which fed the so-called \emph{fixed function pipeline} on the GPU.
 The GPU rasterized the primitives and determined the colors of the resulting pixels by interpolating vertex colors or by simple texturing.
-Over time, the capabilities of GPUs increased. The fixed function pipeline was first made increasingly configurable by adding new functions such as multi-texturing and eventually it was made programmable by allowing pixel shaders.
-A pixel shader is a programs which determines the color of each rasterized pixel and it is executed by general purpose processing units on the GPU.
+Over time, the capabilities of GPUs increased. The fixed function pipeline was first made increasingly configurable by adding new functions such as multi-texturing and eventually, it was made programmable by allowing pixel shaders.
+A pixel shader is a program which determines the color of each rasterized pixel and it is executed by general-purpose processing units on the GPU.
 At the same time, vertex processing was moved to the GPU and made programmable using the same processing units.
 The overall computational power of GPUs increased substantially by providing increasing memory bandwidth and by instantiating numerous processing units operating in parallel.
 This computational power combined with their ubiquity made GPUs attractive for applications outside of real-time rendering.~\cite{McClanahan2010}
 
 While this \gls{gpgpu} usage was not the primary purpose of shaders, multiple APIs and libraries came up to provide good support using GPUs for different purposes.
-GPUs soon gained the ability to run compute shaders (also called compute kernels) outside the graphics pipeline, but using the same general purpose processing units.
-Nowadays, the computing power of GPUs stems from their large amount of general purpose arithmetical processing units and the parallel computing power is used for games, high performance computing and even tasks like offloading computations from spreadsheets or databases~\cite{Lillqvist2016, Meraji2015}.
+GPUs soon gained the ability to run compute shaders (also called compute kernels) outside the graphics pipeline, but using the same general-purpose processing units.
+Nowadays, the computing power of GPUs stems from their large amount of general-purpose arithmetical processing units and the parallel computing power is used for games, high performance computing and even tasks like offloading computations from spreadsheets or databases~\cite{Lillqvist2016, Meraji2015}.
 
 \paragraph{Optimization} In general, code should run as fast as possible. This saves time, energy and money or allows us to handle larger problems.
 To achieve this goal, code runs through multiple stages of compilation and optimization before it is executed.
 The time when optimizations happen differs depending on the used programming languages and tools.
-E.g. C++ code is optimized ahead of runtime, when compiling code. On the other hand, scripting languages like JavaScript or bytecode languages like Java and C\texttt{\#} are optimized at runtime by a \gls{jit}.
+E.g. C++ code is optimized ahead of runtime when compiling code. On the other hand, scripting languages like JavaScript or bytecode languages like Java and C\texttt{\#} are optimized at runtime by a \gls{jit}.
 On a GPU, code is compiled ahead of runtime, similar to C++. The compiled code is then copied over the \gls{pciebus} to the GPU and executed.
 
-For ahead-of-time compiled programming languages, optimizations are generally based on static analyses of code. For example constant propagation can be implemented by first analyzing the possible values of variables using a fixed point iteration over the \gls{cfg} and afterwards transforming the \gls{cfg} such that known variable values are used.~\cite{Seidl2010}
+For ahead-of-time compiled programming languages, optimizations are generally based on static analyses of code. For example, constant propagation can be implemented by first analyzing the possible values of variables using a fixed point iteration over the \gls{cfg} and afterward transforming the \gls{cfg} such that known variable values are used.~\cite{Seidl2010}
 
 Another possible optimization is the decision where to place code in a resulting executable.
-It is beneficial for performance if seldom executed instructions are put outside of the usual control flow.
+It is beneficial for performance if seldom executed instructions are put outside of the usual control-flow.
 On an average execution, these instructions are not executed.
 If they are in between other code, the processor needs to jump over them at some point.
 If they are somewhere else instead, e.g. after the return statement, this one jump can be saved in the average case and the code runs faster.
 The general process of deciding the order of code in the executable is called \emph{linearization}~\cite{Seidl2010}.
-The compiler has to decide a linear order of the code, which is previously represented as a control flow graph.
+The compiler has to decide a linear order of the code, which is previously represented as a control-flow graph.
 
-There is a difficulty with this optimization though: The compiler often does not know which branch will be taken (hot) and which code is reached seldom (cold). Therefore it has several means to figure out which branches are hot and which cold. Most often, the compiler uses heuristics. For example error handling code is probably taken less often than a path without errors. As another variant, the code author themselves can tell the compiler which branch is taken more often. An example is the Linux kernel, which often makes use of \texttt{likely} and \texttt{unlikely} markers in \texttt{if}-conditions.
+There is a difficulty with this optimization though: The compiler often does not know which branch will be taken (hot) and which code is reached seldom (cold). Therefore it has several means to figure out which branches are hot and which cold. Most often, the compiler uses heuristics. For example, error handling code is probably taken less often than a path without errors. As another variant, the code author themselves can tell the compiler which branch is taken more often. An example is the Linux kernel, which often makes use of \texttt{likely} and \texttt{unlikely} markers in \texttt{if}-conditions.
 
-There are cases though, where the outcome of a condition depends on the concrete input into the application or the compilers heuristics take the wrong guess. In theory, a developer could work around this by marking every of those conditions with \texttt{likely}. In general this is undesirable as the compiler should automate as much as possible and developers can be mistaken when guessing the likelihood of branches.
+There are cases though, where the outcome of a condition depends on the concrete input into the application or the compilers heuristics take the wrong guess. In theory, a developer could work around this by marking every one of those conditions with \texttt{likely}. In general, this is undesirable as the compiler should automate as much as possible and developers can be mistaken when guessing the likelihood of branches.
 For \gls{jit} compilers, which are working at runtime, this optimization is not a problem because the interpreter knows which branches are hot and which cold. The knowledge of concrete input data enables them to output more efficient code than ahead-of-time compilers.
 
 \paragraph{Profile-Guided Optimization} There is a remedy for compiled languages though: Developers can provide sample input data to the compiler.
@@ -56,7 +56,7 @@ This optimization can yield performance improvements of more than \SI{10}{\perce
 For clang there is also a second option available. Instead of using instrumentation to capture runtime information, it can also use data collected by standard profiling tools like the Linux \texttt{perf} program~\cite{LinuxPerf}. Profilers like \texttt{perf} generally incur a lower runtime overhead compared to instrumentation. The downside is that the resulting information is less detailed~\cite{ClangManual}.
 
 The usage example in \cref{lst:compile-pgo} shows that using \gls{pgo} today is well-supported by popular tools and easy to use for developers.
-In the first part of this introduction, we looked at the evolution of GPUs and how they became highly parallel, general purpose. Doing profile-guided optimizations however, is not yet supported for GPU code. The problem is the lack of tools for profiling or instrumentation of shaders.
+In the first part of this introduction, we looked at the evolution of GPUs and how they became highly parallel, general-purpose. Profile-guided optimizations however are not yet supported for GPU code. The problem is the lack of tools for profiling or instrumentation of shaders.
 
 \paragraph{GPU Profiling} There exist many analysis tools to analyze shader performance~\cite{RenderDoc, NvidiaShaderPerf}. They give information about how long a shader needs to execute or how much of the memory bandwidth it uses. But almost all of them stop at this level and are not able to give instruction-level insights into the performance of shader code like where it spends the most time, which branches are taken, how long different memory fetches take, etc.
 There exist static analysis tools that approximate this information~\cite{AMDShaderAnalyzer}. However, as seen before with the comparison of ahead-of-time and \glspl{jit} compilers, the knowledge of concrete input data enables some optimizations that are otherwise impossible.
@@ -70,10 +70,10 @@ The focus of this thesis is to collect the necessary runtime information of GPU 
 There exist quite a few different terms for the logical and physical parts of a GPU. Multiple vendors invent different terms and CPU notations like \enquote{thread} can be ambiguous when used in the context of GPUs. The logically similar meaning of a thread on a GPU would be a single lane for the SIMD units. On the other hand, a thread could be a description for a complete SIMD unit which executes one program at a time, which makes sense from a hardware point of view.
 
 Throughout this paper, we use the term \emph{SIMD lane} for a single work-item.
-For a group of work-items which are run on the same SIMD unit, we use the expression \emph{SIMD unit}.
-AMD revers to this group of items as wavefront while NVIDIA uses warp.
+For a group of work-items that are run on the same SIMD unit, we use the expression \emph{SIMD unit}.
+AMD refers to this group of items as wavefront while NVIDIA uses warp.
 
-With respect to profile-guided optimizations, \emph{benchmark} is used to label an automated, scripted execution of an application which is used to gather profiling data.
+Concerning profile-guided optimizations, a \emph{benchmark} is used to label an automated, scripted execution of an application that is used to gather profiling data.
 
 % We use the term \gls{cu} used by OpenCL and AMD, called \gls{sm} by NVIDIA.
 % https://community.khronos.org/t/relation-between-cuda-cores-and-compute-units/4772/2
@@ -83,12 +83,14 @@ With respect to profile-guided optimizations, \emph{benchmark} is used to label 
 This work contributes several instrumentations for Vulkan on AMD GPUs in the AMDVLK driver.
 We use these instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
 
-One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{bb} is executed. This allows the compiler to detect hot paths in shaders and optimize them more aggressively. We measure and evalute the effect of optimizations in LLVM when accurate BB counts are available.
+One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{bb} is executed.
+This allows the compiler to detect hot paths in shaders and optimize them more aggressively.
+We measure and evaluate the effect of optimizations in LLVM when accurate BB counts are available.
 
-Accurate counters also allow detecting unused basic blocks that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code have an effect on the register allocation of shaders.
+Accurate counters also allow detecting unused basic blocks that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code affect the register allocation of shaders.
 
 A second instrumentation counts how often certain variables are uniform or divergent at runtime. A uniform variable has the same value on all active lanes on a SIMD unit, the opposite is a divergent variable where the values differ across the lanes.
-Uniform variables permits optimizations that are impossible for divergent variables.
+Uniform variables permit optimizations that are impossible for divergent variables.
 E.g. for branches, the uniformity is important because the GPU might need to execute both branches on a SIMD unit and needs to run them sequentially, one after the other.
 We show statistics about the uniformity of branches in games.
 Additionally, our instrumentation allows us to analyze the uniformity of memory loads, which we present too.
