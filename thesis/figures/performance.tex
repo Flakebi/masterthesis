@@ -4,11 +4,12 @@
 \begin{tikzpicture}
 \begin{axis}[
 	ybar,
-	enlarge x limits=0.2,
+	enlarge x limits=0.1,
 	cycle list name=mycolors,
 	symbolic x coords={ashes,dota,dow3,f12017,madmax,switch},
 	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max,Switch vm},
 	xtick=data,
+	xticklabel style={text width=2cm,align=center},
 	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
 	ymin=0,
 	grid=both,

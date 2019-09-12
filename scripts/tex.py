@@ -60,23 +60,23 @@ def counter_dist1(ctrs):
 	bin_size = int(11222915000*2.5)
 	bins = (max(ctrs) + bin_size - 1) // bin_size
 	bins = 40
-	bin_size = max(ctrs) // (bins - 1)
+	bin_size = int(ceil(max(ctrs) / bins))
 
 	bin_vals = [0] * bins
 	for c in ctrs:
 		if c != 0:
-			bin_vals[c // bin_size] += 1
+			bin_vals[int(c / bin_size)] += 1
 
 	return bin_size, bin_vals
 
 def counter_dist2(ctrs):
-	bin_size = int(11222/3.6)
-	bins = (int(10e4) + bin_size - 1) // bin_size
+	bin_size = 0.0000016
+	bins = int((10e4 / 1080 / 1920 / 999 + bin_size) / bin_size)
 
 	bin_vals = [0] * bins
 	for c in ctrs:
 		if c != 0:
-			i = c // bin_size
+			i = int(c / bin_size)
 			if i < len(bin_vals):
 				bin_vals[i] += 1
 
@@ -91,7 +91,11 @@ def counter_dist(args, f):
 		if not k.startswith(args.game):
 			continue
 
-		ctrs = [item for l in v for item in l]
+		# Divide through screen resolution and amount of frames
+		if args.game != "dota":
+			raise Exception("Only dota is supported, please insert the number of frames")
+
+		ctrs = [item / 1080 / 1920 / 999 for l in v for item in l]
 
 		print(f"""
 \\addplot[
@@ -102,7 +106,7 @@ def counter_dist(args, f):
 		bin_size, bin_vals = f(ctrs)
 
 		for i, b in enumerate(bin_vals):
-			print(f"{i*bin_size + bin_size//2}\t{b}\\\\")
+			print(f"{i*bin_size + bin_size/2}\t{b}\\\\")
 
 		print("} \closedcycle;")
 
@@ -223,7 +227,7 @@ def unused_code_summary(args):
 	symbolic x coords={{{",".join([g for g, _ in used_games])}}},
 	xticklabels={{{",".join([games[g] for g, _ in used_games])}}},
 	xtick=data,
-	xticklabel style={{text width=2.5cm,align=center}},
+	xticklabel style={{text width=1.5cm,align=center}},
 	ylabel={{Unused blocks [\SI{{}}{{\percent}}]}},
 	ymin=0,
 	ymax=119,
@@ -326,6 +330,27 @@ def registers_fun(args):
 		print(f"{reg_typ} is a wrong type, try vgpr/sgpr")
 		return
 
+	# Only compare pipelines which occur in all configurations
+	pipelines = {}
+	for game in sorted(games.keys()):
+		pipelines[game] = {}
+		config_count = 0
+		for config in configs:
+			key = f"{game}-{config}"
+			if key in registers:
+				config_count += 1
+				regs = registers[key]
+				for pipe, v in regs.items():
+					if v[start_index] != 0:
+						if pipe not in pipelines[game]:
+							pipelines[game][pipe] = 1
+						else:
+							pipelines[game][pipe] += 1
+		# Remove pipelines which are only available in some configs
+		ps = [p for p, v in pipelines[game].items() if v != config_count]
+		for p in ps:
+			del pipelines[game][p]
+
 	for config in configs:
 		print("\\addplot coordinates {")
 		for game in sorted(games.keys()):
@@ -334,11 +359,14 @@ def registers_fun(args):
 				regs = registers[key]
 				count = 0
 				amount = 0
-				for v in regs.values():
+				for p in pipelines[game].keys():
+					v = regs[p]
+				# for v in regs.values():
 					if v[start_index] != 0:
 						count += v[start_index]
 						amount += 1
-				count /= amount
+				if amount != 0:
+					count /= amount
 
 				print(f"({game},{count})")
 		print("};")
@@ -378,12 +406,15 @@ def uniform_branches(args):
 def uniform_loads(args):
 	uniform(args, "LoadValue")
 
+def uniform_addrs(args):
+	uniform(args, "Address")
+
 def register_scatter(args):
 	# Analyze vgprs only
 	xconfig = "use-wave-late"
 	yconfig = "use-wave-late-remove"
 	indices = [0, 2, 4]
-	games = ["dota", "madmax"]
+	games = ["ashes", "dota", "infiltrator", "madmax"]
 
 	print(r"""
 \addplot[scatter,only marks,scatter src=explicit symbolic]
@@ -414,7 +445,7 @@ def register_occupancy(args):
 	xconfig = "use-wave-late"
 	yconfig = "use-wave-late-remove"
 	indices = [0, 2, 4]
-	games = ["dota", "madmax"]
+	games = ["ashes", "dota", "infiltrator", "madmax"]
 
 	data_size = 10
 	print(f"""
@@ -471,6 +502,7 @@ def main():
 		"registers": registers_fun,
 		"uniform-branches": uniform_branches,
 		"uniform-loads": uniform_loads,
+		"uniform-addrs": uniform_addrs,
 		"register-scatter": register_scatter,
 		"register-occupancy": register_occupancy,
 		"data": data,

@@ -87,12 +87,12 @@ The uniformity analysis does only analyze conditions and values from memory at t
 It would be interesting to expand this to image and buffer loads.
 They make up a considerable part of the memory accesses in a shader, but analyzing them is more difficult and did not fit into the time frame of this thesis.
 
-In addition to analyzing if a variable is uniform or not, we can also create statistics about how often a variable is uniform.
+In addition to analyzing if a variable is uniform or not, we are interested in statistics about how often a variable is uniform.
 If the divergent cases only make up a low fraction of the executions, it can still be beneficial to optimize for the common case.
 At the moment, we do not know how often a variable is uniform or not.
 
 Based on the basic block counters, the compiler removed basic blocks that never get executed.
-This worked good for two games but did not work for others.
+This worked good for three games but did not work for others.
 As removing basic blocks was meant as a simple and dirty test, this is not too surprising.
 However, it would be nice to have this test working for more games and collect more information about the effects.
 
@@ -103,6 +103,7 @@ Before PGO can be used in production environments, this bug should be fixed and 
 Now, that collecting runtime data from shaders works, this data can be used in the compiler to improve the optimization of shaders.
 This includes many of the optimizations which we suggested in \cref{sub:optimizations}.
 Hoisting buffer and texture loads out of conditional blocks, for example, is a promising candidate for rewarding optimizations.
+Also, the compiler is now able to collect data about the uniformity of variables but this information is not used for optimizations so far.
 
 The existing optimizations were applied to five different games.
 The collected performance data give an impression of what we can expect of PGO on graphics cards.

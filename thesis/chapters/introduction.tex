@@ -83,7 +83,7 @@ Concerning profile-guided optimizations, a \emph{benchmark} is used to label an 
 This work contributes several instrumentations for Vulkan on AMD GPUs in the AMDVLK driver.
 We use these instrumentations on popular games and evaluate the collected data. Using the data, we evaluate some possible, profile-guided optimizations on these games.
 
-One instrumentation inserts counters at \glspl{bb} which gives us information about how often each \gls{bb} is executed.
+One instrumentation inserts counters at \glspl{bb}\footnote{See \cref{sub:counter-instrumentation} for an explanation of basic blocks} which gives us information about how often each \gls{bb} is executed.
 This allows the compiler to detect hot paths in shaders and optimize them more aggressively.
 We measure and evaluate the effect of optimizations in LLVM when accurate BB counts are available.
 

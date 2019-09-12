@@ -18,7 +18,7 @@
 	\node[right=10mm] (scalar-label) at (-1cm, 0cm) {Scalar};
 	\node[scalarbox] (scalar0) at (-1cm, -1cm) {};
 	\node[scalarbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.5cm] (scalar1) at (-1cm, -1.75cm) {};
-	\node[right=10mm] (mark2) at (-1cm, -2.15cm) {};
+	\node[right=10mm] (mark2) at (-1cm, -2.25cm) {};
 	\node[boundingbox, fit=(scalar0)(scalar1)(mark2)(scalar-label)] (scalar) {};
 
 	\node[right=10mm] (simd-label) at (1.5cm, 0cm) {SIMD};
@@ -30,10 +30,12 @@
 		(lanes0-2) at (1cm + 0.6cm * 0, -1.75cm - 0.25cm * 0) {};
 	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.5cm]
 		(lanes1-2) at (1cm + 0.6cm * 1, -1.75cm - 0.25cm * 1) {};
-	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.25cm]
-		(lanes2-2) at (1cm + 0.6cm * 2, -1.625cm - 0.25cm * 2) {};
+	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.3cm]
+		(lanes2-2) at (1cm + 0.6cm * 2, -1.65cm - 0.25cm * 2) {};
+	\node[simdbox, dotted, fill=color0!30!white, scope fading=south, minimum height=0.1cm]
+		(lanes3-2) at (1cm + 0.6cm * 3, -1.62cm - 0.25cm * 3) {};
 
-	\node (mark3) at (4.3cm, -2.15cm) {};
+	\node (mark3) at (4.3cm, -2.25cm) {};
 	\node[boundingbox, fit=(lanes0)(lanes3)(mark3)(simd-label)] (simd) {};
 
 \end{tikzpicture}

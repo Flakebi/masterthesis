@@ -5,12 +5,17 @@ We modified the Vulkan driver to enable PGO so we need Vulkan applications for b
 We picked the following five games which have in common that they use the Vulkan API on Linux, and they have a benchmark which can be executed automatically and collects performance data in a machine-readable form:
 Ashes of the Singularity which is abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we shorten to Warhammer.
 There are similar games, which we tried but failed because of various problems like the game does not start at all under Linux.
-The games that we excluded are F1 2018, Serious Sam Fusion 2017 and Total War Saga: Thrones of Britannia, which was not even installable through Steam.
+The games that we excluded are F1 2018, Serious Sam Fusion 2017 and Total War Saga: Thrones of Britannia, which was not even installable.
 
 Another game focused application which we looked at is the Infiltrator Demo Project of the Unreal Engine~\cite{Games2015}.
 This is not a playable game, but a demo scene which plays when the application starts and which showcases the game engine.
 Also, it does not measure the performance, so we did not use it to test the performance of PGO, but we measured the number of needed registers.
-Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we describe further in \cref{sub:eval_unused}.
+Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we describe further in \cref{sub:eval_unused}. We call this program switch vm.
+
+The hardware for our benchmarks consists of a Intel i7-5820K @ \SI{3.30}{\giga\hertz} processor and an AMD Radeon RX 480 GPU with \SI{8}{\giga\byte} of GPU memory.
+To make the benchmarks more reproducible, the GPU used the \texttt{profile\_standard} performance mode, which means it runs with a fixed frequency.
+The CPU used the performance frequency governor and turbo was switched off for benchmarks.
+The benchmarks are run in full HD resolution, so $1920 \times 1080 = 2\,073\,600$~pixel.
 In total, more than $6 \frac{1}{2}\;\si{h}$ was spent running benchmarks.
 
 The performance numbers are expressed as frame times, i.e. how long does it take to compute a single frame.
@@ -38,18 +43,19 @@ Hence a pixel shader gets executed a lot more often than a vertex shader and LLV
 
 To get an intuition for the collected counter values, we visualize them in a few diagrams.
 \Cref{dia:counter_values} shows a histogram of the basic blocks, sorted by execution count.
-The x-axis of this diagram represents the counter, i.e. how often a basic block is executed.
-A bar for the execution counts $0.8\cdot 10^{12}$--$1.2\cdot 10^{12}$, for example, represents all blocks which get run at least $0.8\cdot 10^{12}$ times but less than $1.2\cdot 10^{12}$ times.
+The total execution count is divided by the frame count of the benchmark and by the resolution of the screen.
+This means the x-axis of this diagram represents how often a basic block is executed on average per frame, per pixel.
+A bar for the execution counts $530$--$550$, for example, represents all blocks which get run at least $530$ times but less than $550$ times.
 The height of the bar counts how many basic blocks fall into this range, in this example one basic block of all shaders in Dota 2 falls into the range.
 The lowest bucket of the diagram, the leftmost bar, contains most of the blocks.
 This bar is cut off, otherwise, the rest of the bars would not be visible.
-This means most basic blocks get executed less than $10^{10}$ times.
-A few blocks run more often, two of them more than $10^{12}$ times.
+This means most basic blocks get executed less than $20$ times per frame and pixel.
+A few blocks run more often, two of them more than 500 times, which means more than $10^{12}$ times in total over the duration of the benchmark.
 The blocks that are run most often are the inner parts of a hot loop.
 \input{figures/counter-values.tex}
 
 \Cref{dia:counter_values2} gives a detailed view of the leftmost part of \cref{dia:counter_values}.
-It only shows the range up to $10^5$ executions.
+It only shows the range up to $5\cdot 10^{-5}$ executions per frame and pixel.
 In this range, the blocks are distributed more equal, still, we see that most blocks are executed seldom while blocks with a higher counter value are rare.
 \input{figures/counter-values2.tex}
 
@@ -62,7 +68,7 @@ In previous tests with PGO, Ashes did not show these artifacts, so maybe this bu
 \label{sub:eval_unused}
 Looking at basic blocks that are never executed, the compiler can remove them and study the changes in register usage and performance.
 The performance comparison can be found in \cref{sub:eval_perf}, this section shows statistics about the amount of unused code.
-The fraction of unused basic blocks ranges from \SI{0.22}{\percent} in Mad Max up to \SI{37.46}{\percent} unused blocks in in Warhammer.
+The fraction of unused basic blocks ranges from \SI{0.22}{\percent} in Mad Max up to \SI{37.46}{\percent} unused blocks in Warhammer.
 \Cref{dia:unused_by_game} shows a comparison of all analyzed games.
 \input{figures/unused-by-game.tex}
 
@@ -73,8 +79,13 @@ A height of \SI{6}{\percent} at one point (the right y-axis is the crucial one h
 Each black line represents a shader with unused code. The left y-axis is connected to the percentage of unused code.
 \input{figures/unused-by-bb.tex}
 
-We test the effect of removing unused code on the games Dota 2 and Mad Max and on a small sample program.
-Our code to remove basic blocks is not robust enough to work for all tested games and only Dota 2 and Mad Max ran flawlessly, thus the other games were not benchmarked in this configuration.
+We test the effect of removing unused code on the games Ashes, Dota 2, Mad Max and on a small sample program.
+Our code to remove basic blocks is not robust enough to work for all tested games. Warhammer and F1 2017 crashed in this configuration.
+Ashes also did not work with our final technique that uses the LLVM unreachable instruction.
+Instead, we used a basic block that contained an endless loop and replaced unused basic blocks with this new block for Ashes.
+The Unreal Engine Infiltrator Demo contains some basic blocks that are executed seldom, so for this game, only blocks with a counter of zero are removed.
+This is not enough to get this game running, it crashes after about a quarter of the total time.
+Still, we analyze this game, but only using shaders that are compiled until the game crashes, which are \SI{84.3}{\percent} of the 843 pipelines.
 
 The small sample program which we tested in addition to the games runs a bytecode virtual machine in a shader using one large switch-case statement.
 Each case statement contains the code for one virtual instruction and the shader iterates through every instruction.
@@ -99,7 +110,7 @@ The register usage for our switch vm is not shown because it stays unchanged, on
 \input{figures/registers.tex}
 
 The average register usage stays the same when using PGO. Ashes sometimes uses a bit fewer registers than normal, F1 2017 sometimes more but the differences are small.
-Mad Max shows the greatest effect when removing unused code, it sometimes reduces the register usage by one register on average.
+Ashes and Mad Max show the greatest effect when removing unused code, removing unused code sometimes reduces the register usage by one register averaged over all shaders.
 A more detailed analysis of the effect of removing unused blocks in \cref{dia:registers_scatter} shows the register amount for each shader before and after removing blocks.
 Every dot represents a shader, the x-coordinate is the number of used registers when compiling the shader with PGO, the y-coordinate are the registers when compiling with PGO and additionally removing blocks which never get executed.
 Most shaders lie on the diagonal, which means the number of registers does not change.
@@ -116,7 +127,7 @@ The important metric that builds upon the number of used registers is the occupa
 If fewer registers are used, the occupancy gets higher and the GPU can hide memory latency better.
 The optimal occupancy is circa at 10 parallel shader executions per SIMD unit~\cite{Aaltonen2017}, so we focus on shaders with low occupancy.
 The amdgpu register allocator in LLVM optimizes for occupancy, which means that no shader should get worse occupancy when applying more optimizations.
-The occupancies of shaders in Dota 2 and Mad Max are displayed in \cref{dia:registers_occupancy}.
+The occupancies of shaders in Ashes, Dota 2, Unreal Infiltrator and Mad Max are displayed in \cref{dia:registers_occupancy}.
 In this diagram, the occupancy is based only on vector registers and ignores scalar registers.
 On some hardware, scalar registers can also limit the occupancy but this depends on the hardware and is only seldom the case, thus we ignore scalar registers here.
 Most shaders are on the diagonal, so the occupancy does not change.
@@ -167,8 +178,19 @@ The uniformity of loaded memory values is shown in \cref{dia:uniform_loads}.
 It is important to know that the analyzed load instructions do not include buffer loads and image loads which are more complicated to analyze because they are indexed with multiple dimensions, can return multiple dimensions, are connected with a sampler, use mipmapping, etc.
 \input{figures/uniform-loads.tex}
 
+For comparison, \cref{dia:uniform_addrs} shows the uniformity of addresses used in load instructions.
+This yields largely the same results as the uniformity of loaded values, sometimes it differs a bit.
+For example, Ashes has more divergent addresses than load values.
+This means that some loads with different addresses return a uniform value.
+There are cases, where using the same address returns different values across lanes.
+This happens when the address lies in scratch memory, which is used e.g. for spilled registers.
+\input{figures/uniform-addresses.tex}
+
 From the instrumented loads, divergent loads are the smallest category, staying under \SI{35}{\percent} in every game.
-For Ashes and Warhammer, dynamic uniform loads are the common case. For the rest of the games, static uniform loads make up more than half of the loads, leading to different distributions of load uniformity in ever game.
+For Ashes and Warhammer, dynamic uniform loads are the common case. For the rest of the games, static uniform loads make up more than half of the loads, leading to different distributions of load uniformity in every game.
+
+For this work, we analyzed the uniformity of branches and loads, but we did not measure the performance changes when dynamic uniform values are known to the compiler.
+Using this information for further optimizations is left for future work.
 
 \subsection{Performance}
 \label{sub:eval_perf}

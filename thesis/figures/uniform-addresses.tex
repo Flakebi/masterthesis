@@ -1,0 +1,34 @@
+\begin{figure}
+\pgfplotsset{width=\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar stacked,
+	enlarge x limits=0.2,
+	cycle list name=mycolors,
+	symbolic x coords={ashes,dota,dow3,f12017,madmax},
+	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
+	xtick=data,
+	ylabel={Uniformity [\SI{}{\percent}]},
+	ymin=0,
+	ymax=100,
+	grid=both,
+	nodes near coords,
+	% Do not display text for nodes with value < … by setting opacity to 0
+	node near coords style={
+		/utils/exec={\setbox0\hbox{\pgfmathprintnumber\pgfplotspointmeta}
+		\pgfmathfloattomacro{\pgfplotspointmeta}{\F}{\M}{\E}
+		\pgfmathsetmacro{\myopacity}{ifthenelse(\M*pow(10,\E)<17,0,1)}
+		},
+		rotate=90, anchor=center, opacity=\myopacity},
+	bar width=0.5cm,
+	legend style={at={(1,1)},anchor=south east},
+]
+
+\runtex{uniform-addrs}
+\legend{Static uniform,Dynamic uniform,Divergent}
+\end{axis}
+\end{tikzpicture}
+\captionof{figure}{Uniformity of addresses in load instructions}
+\label{dia:uniform_addrs}
+\end{figure}

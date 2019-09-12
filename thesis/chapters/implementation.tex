@@ -1,8 +1,8 @@
 \clearpage
 \bigsection{Implementation}
-The implementation happens in several steps of the workflow and touches multiple parts of the driver.
+The implementation happens in several steps of the workflow and touches multiple parts of the AMDVLK driver.
 First, the LLVM compiler inserts instrumentation instructions.
-LLVM already can emit instrumentation instructions for counting basic blocks and it can be activated with a few lines of code in LLPC.
+LLVM can already emit instrumentation instructions for counting basic blocks and it can be activated with a few lines of code in \acrfull{llpc}.
 The next step is loading the compiled binary onto the GPU. Therefore, code in PAL needs to be adjusted as summarized in \cref{sub:loading}.
 After loading a shader, it is run. This part is unmodified by our work.
 Then, when a shader pipeline is destroyed again, the driver fetches the collected information and writes them to disk as explained in detail in \cref{sub:save}.
@@ -39,6 +39,9 @@ The detailed effect of these variables and how they are implemented is described
 
 \subsection{Compiling Shaders}
 \label{sub:compiling}
+This section describes our modifications of the compiler pipeline.
+The changes are applied to LLPC and LLVM, which compile shaders in SPIR-V to the hardware ISA.
+
 When the environment variable \texttt{AMDVLK\_PROFILE\_INSTR\_GEN} is set, the compiler inserts instrumentation into shaders. There, we have to distinguish between two possibilities:
 In the default case, any \texttt{\%i} in the filename is replaced with the pipeline id and this filename is provided to the \texttt{PassManagerBuilder}.
 Otherwise, if the variable \texttt{AMDVLK\_PROFILE\_LATE} is set, the instrumentation is inserted after the \texttt{StructurizeCFG} pass.
@@ -100,6 +103,7 @@ When a pipeline gets destroyed because the application does not need it anymore,
 However, not all games destroy pipelines in the end, some just quit.
 To get the counter data for these games, we start a background thread that dumps the counter data every ten seconds.
 A problem with this approach is that collected counters can be inconsistent when a shader is in use while the data is dumped.
+For applications that destroy pipelines, we get accurate counters in the end, this problem only exists for programs that do not delete pipelines.
 To collect counters, the driver maps the sections from the GPU memory to the CPU, writes their addresses into global variables and calls the LLVM PGO file dump function.
 We explicitly specify the filename and replace any \texttt{\%i} inside the name with the current pipeline hash.
 

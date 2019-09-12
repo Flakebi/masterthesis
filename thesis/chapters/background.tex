@@ -22,7 +22,10 @@ The multiple input and output data of the SIMD unit are from multiple instances 
 As we see later, this poses a problem if the program flow is not the same.
 On CPUs, this concept of parallelism is similar to different threads, which only have limited access to each other and run the same code on different data.
 
-\paragraph{Hardware} This section describes the hardware architecture of AMD \gls{gcn} GPUs as this is the architecture we are most familiar with. The general concept of SIMD units is the same on NVIDIA graphic cards, though a difference is e.g. that there are 32 concurrent floating-point operations while there are 64 on AMD \gls{gcn} cards.
+\paragraph{Hardware} This section describes the hardware architecture of AMD \gls{gcn} GPUs as this is the architecture we are most familiar with.
+The \gls{gcn} architecture was introduced in 2011.
+In 2019, the \gls{rdna} architecture was published to supersede \gls{gcn}, we will not dive into it and instead focus on \gls{gcn}.
+The general concept of SIMD units is the same on NVIDIA graphic cards, though a difference is e.g. that there are 32 concurrent floating-point operations while there are 64 on AMD \gls{gcn} cards.
 
 \begin{figure}
 \centering
@@ -35,7 +38,10 @@ On CPUs, this concept of parallelism is similar to different threads, which only
 	\input{figures/gpu-simd-pipeline.tex}
 \end{minipage}
 \end{figure}
-On the hardware level, the basic building block of a modern GPU is a big \gls{simd} unit. The same instruction is run on $16 \times$ 32-bit floating-point numbers simultaneously as shown in \cref{fig:gpu-simd}. We call these 16 different numbers \emph{lanes}. For most instructions, the pipeline has 4 stages and an instruction takes 4 cycles to complete. This also means that after the first cycle, the GPU can issue a second instruction, computing on another 16 floating-point numbers. This could be the next instruction in the program but then the GPU would have to care about data dependencies between instructions. This would add a lot of complexity so AMD decided to do something else instead. They virtually enlarge the SIMD unit to work on a multiple of 16 numbers and execute the same instruction again. The GPU can execute the same instruction 4 times, then the first instruction will be finished in the next cycle. This means at one point in the pipeline, there are 4 instructions in flight, each computing on 16 numbers, which makes a total of 64 different lanes. For a developer, this looks like a SIMD unit that runs computations on 64 floats in parallel. An execution of two consecutive instructions is visualized in \cref{fig:gpu-simd-pipeline}.
+On the hardware level, the basic building block of a modern GPU is a big \gls{simd} unit.
+On the AMD \gls{gcn} architecture, the same instruction is run on $16 \times$ 32-bit floating-point numbers simultaneously as shown in \cref{fig:gpu-simd}. We call these 16 different numbers \emph{lanes}.
+For most instructions, the pipeline has 4 stages and an instruction takes 4 cycles to complete.
+This also means that after the first cycle, the GPU can issue a second instruction, computing on another 16 floating-point numbers. This could be the next instruction in the program but then the GPU would have to care about data dependencies between instructions. This would add a lot of complexity so AMD decided to do something else instead. They virtually enlarge the SIMD unit to work on a multiple of 16 numbers and execute the same instruction again. The GPU can execute the same instruction 4 times, then the first instruction will be finished in the next cycle. This means at one point in the pipeline, there are 4 instructions in flight, each computing on 16 numbers, which makes a total of 64 different lanes. For a developer, this looks like a SIMD unit that runs computations on 64 floats in parallel. An execution of two consecutive instructions is visualized in \cref{fig:gpu-simd-pipeline}.
 
 In addition to the SIMD unit, a \gls{gcn} GPU contains a few other processing units. One of them is the \emph{scalar unit}. This unit comes along the SIMD units, so a program that is run on the GPU contains both, vector instructions for the SIMD units and scalar instructions for the scalar unit in an interleaved manner. The scalar unit is meant for computations which are constant among all SIMD lanes.
 Using the scalar unit instead of SIMD units is a lot more efficient in memory and energy because the data only needs to be stored once instead of 64 times, and operations only need to be executed once.
@@ -44,6 +50,7 @@ Data values that are the same for a whole SIMD unit are called \emph{uniform}, i
 \input{figures/gpu-cu-single.tex}
 \input{figures/gpu-cu.tex}
 Another unit on a \gls{gcn} GPU is the instruction scheduler. It is responsible for fetching new instructions and handing them to the responsible unit, e.g. the scalar unit or the SIMD unit. \Cref{fig:gpu-scalar-single} shows the three different components. For our current setup with one SIMD unit, one scalar unit and one instruction scheduler, the scalar unit will only get an instruction every 4 cycles because it works in synchronization with the SIMD unit and the instruction scheduler will only output instructions every 4\textsuperscript{th} cycle. The only unit which is occupied the whole time is the vector unit. For this reason, every scalar unit and instruction scheduler is responsible for 4 SIMD units. \Cref{fig:gpu-scalar} displays the pack of 4 SIMD units, one scalar unit and one instruction scheduler, which is called \gls{cu}. Additionally, one \gls{cu} contains some local memory called \gls{lds}. One GPU consists of multiple such packs, for example, a recent AMD Radeon VII GPU contains 60 \glspl{cu}. For a floating-point instruction such as an addition, which takes 4 cycles, this accumulates to a total of $60 \cdot 4 = 240$ SIMD units and a maximum of $240 \cdot 64 = 15360$ SIMD computations running in parallel. Every cycle, $240 \cdot 16 = 3840$ will get ready. And as a computation takes 4 cycles, 15360 are currently \enquote{in-flight}.
+The processor runs at a base frequency of \SI{1.4}{\giga\hertz}. At this speed, it finishes $5.376 \cdot 10^{12}$ vector instructions per second.
 
 As emphasized before, having divergent control-flow is not simply possible for a program instances that get executed on one SIMD unit. For this purpose, AMD \gls{gcn} GPUs have an \emph{EXEC mask}, which contains one bit for every lane of a SIMD unit. If this bit is one, it means a lane is active, if it is zero, a lane is inactive and all SIMD operations are a no-op for this lane. When the program encounters a branch instruction, there are several possibilities. If all lanes take one branch, the scalar unit can execute a jump and execution continues as normal. If a part of the lanes take one branch and the rest takes another branch, both branches have to be executed. Typically, the execution mask for the first branch is set and the first branch is executed. Then the execution mask is flipped and the second branch is executed. After both branches are executed, the execution mask is reset to all ones again. An illustration of an \emph{if-else} construct is shown in \cref{fig:gpu-simd-condition}.
 
@@ -58,8 +65,8 @@ Similar to different operating systems and standards like POSIX and the Windows 
 For example, in OpenGL this would be accomplished with the \texttt{glShaderSource} and \texttt{glCompileShader} function.
 In Vulkan, there is \texttt{vkCreateShaderModule} for this purpose.
 
-In this section, we explain the structure of compiling and running shaders with the AMDVLK Vulkan driver on Linux. This driver is based on the LLVM compiler framework. Typically, shaders for Vulkan are written in the \gls{glsl}. The developer first has to translate this source coded to the intermediate language \emph{SPIR-V}. The resulting SPIR-V code can be passed to the Vulkan API. From there is passed to the LLPC (the llvm pipeline compiler). The SPIR-V code gets then converted into the LLVM \gls{ir}. After some intermediate transformations on this \gls{ir}, the LLVM compiler gets called. In this part, most optimizations happen.
-The LLVM framework also converts the IR to another IR, the \emph{SelectionDAG} -- as the name says a directed, acyclic graph of instructions~\cite{llvmSelectionDag}. The SelectionDAG gets linearized and transformed into \emph{MachineIR}~\cite{llvmSelectionDag}. MachineIR is the intermediate representation which is most similar to the native \gls{isa} of the graphics card. The conversion to the \gls{isa} happens in the last step. The output of LLVM is a file in the \gls{elf}. The LLPC applies some patches to the generated \gls{elf} file and then returns it.
+In this section, we explain the structure of compiling and running shaders with the AMDVLK Vulkan driver on Linux. This driver is based on the LLVM compiler framework. Typically, shaders for Vulkan are written in the \gls{glsl}. The developer first has to translate this source coded to the intermediate language \emph{SPIR-V}. The resulting SPIR-V code can be passed to the Vulkan API. From there is passed to the \gls{llpc}. The SPIR-V code gets then converted into the LLVM \gls{ir}. After some intermediate transformations on this \gls{ir}, the LLVM compiler gets called. In this part, most optimizations happen.
+The LLVM framework also converts the IR to another IR, the \emph{SelectionDAG} -- as the name says a directed, acyclic graph of instructions~\cite{llvmSelectionDag}. The SelectionDAG gets linearized and transformed into \emph{MachineIR}~\cite{llvmSelectionDag}. MachineIR is the intermediate representation which is most similar to the native \gls{isa} of the graphics card. The conversion to the \gls{isa} happens in the last step. The output of LLVM is a file in the \gls{elf}. The \gls{llpc} applies some patches to the generated \gls{elf} file and then returns it.
 
 When running a shader, the compiled \gls{elf} file is passed to the \gls{pal}. This library is responsible for talking to the operating system and the in-kernel part of the driver also called \gls{kmd}. It reads meta-information from the ELF file and uploads the compiled code to the GPU to execute it. The stages to run code on a GPU thus look like this:
 
@@ -80,7 +87,7 @@ The compilation is done now, the next steps are loading and executing the code.
 	\item The GPU runs the code
 \end{enumerate}
 
-When executing a shader, GPUs wait a lot of time for memory. To deliver a good performance, they employ multiple techniques to hide memory latency and keep the arithmetic cores busy.
+GPUs wait a lot of time when fetching values from memory. To deliver good performance, they employ multiple techniques to hide memory latency and keep the arithmetic cores busy.
 Like CPUs, GPUs use \gls{smt} to execute other code while waiting for memory in one program.
 The difference to CPUs is that GPUs can switch between programs a lot faster. A single cycle is enough for a context switch.
 Additionally, the amount of programs sleeping and waiting for memory concurrently is higher than on CPUs.
@@ -95,7 +102,7 @@ The amount of shaders that can run simultaneously is called \emph{occupancy}.
 If the occupancy is too low, the GPU stalls when waiting for memory and will deliver degraded performance.
 Thus, the fewer registers a shader uses, the better the performance can get (up to a certain point).
 
-\subsection{PGO in LLVM}
+\subsection{Profile-Guided Optimizations in LLVM}
 \label{sub:pgo-background}
 The LLVM compiler framework has an existing infrastructure for profile-guided optimization. This infrastructure can be used by all frontends to LLVM, e.g. the C/C++ compiler \texttt{clang} or the Rust compiler. LLVM supports two different profiling techniques, a sampling profiler, and instrumentation.
 This work makes use of the instrumenting profiler.
@@ -105,7 +112,7 @@ This work makes use of the instrumenting profiler.
 Compilers often use a control-flow graph as their internal representation of a program.
 This graph consists of nodes and edges. The edges are jumps or branches in the program, each node consists of a list of instructions that are executed in order.
 Inside a node, no control-flow exists, there are no jumps to other instructions and edges which lead to a node always start with the first instruction.
-The nodes are called basic blocks as they are the building block for every program.
+The nodes are called \acrfull{bb} as they are the building block for every program.
 
 One information that can be collected through profiling is how often each basic block is executed. The simplest version of such an instrumentation would insert one counter at each basic block.
 Let us consider an example with an if-else-statement. The instrumentation would insert four counters: Before the branching, in the if-block, in the else-block and after the branching in the following block.
@@ -115,7 +122,7 @@ If the if-part and the total executions are collected, it is possible to get the
 In 1973, \citet{Knuth1973} showed an algorithm to find a minimal set of blocks where a compiler needs to insert counters.
 This algorithm is implemented in the instrumentation profiling of LLVM, and automatically gets used when turning on basic block counting.
 
-\subsection{Structurizing the CFG}
+\subsection{Structurizing the Control-Flow Graph}
 \label{sub:structurize}
 A single SIMD unit cannot execute divergent control. However, the shader code that the compiler gets is not in a form which can handle divergent branches.
 Therefore, the compiler needs to change the \gls{cfg} in such a way, that it gets suitable for SIMD units and gracefully handles diverging control-flow.
@@ -151,8 +158,8 @@ After the compiler emits object files, the linker merges multiple object files i
 
 This could work in the same way on GPUs. However, PAL does not support allocating memory at fixed addresses at the moment and it does not perform relocations (the latter was fixed as part of this thesis). The AMDVLK driver needs to skip the linker step and compiled shaders are stored as ELF object files, like \texttt{.o} files when compiling C code.
 
-\paragraph{PIC} While relocations are still in use today, the plain use of relocations has several disadvantages. As the loader changes the content of the code section, the kernel cannot share these sections in memory between multiple programs or even multiple instances of the same program because the addresses are different each time.
+\paragraph{\acrlong{pic}} While relocations are still in use today, the plain use of relocations has several disadvantages. As the loader changes the content of the code section, the kernel cannot share these sections in memory between multiple programs or even multiple instances of the same program because the addresses are different each time.
 Another disadvantage is that the loader has to go through all usages of every relocated variable and function which can cause a long loading time for programs. The solution is to write all addresses that have to be linked into one section and only once. This section is called the \gls{got}.
 When the address of a linked variable is needed, its address is loaded from the \gls{got} and dereferenced. Functions are called similarly. This \gls{pic} approach enables sharing the code sections between processes because only the \gls{got} is different. A disadvantage is that two dereferences are needed compared to only one with plain relocations.~\cite{BenderskyPic}
 
-Today, \gls{pic} is the standard technique for libraries on Linux. For GPUs, the advantages of PIC are currently not relevant as there are no shared libraries that have to be linked so no code is shared between processes. On the other hand, the disadvantage of an additional dereference is relevant so currently, it is not advantageous to use PIC on GPUs.
+Today, \gls{pic} is the standard technique for libraries on Linux. For GPUs, the advantages of PIC are currently not relevant as there are no shared libraries that have to be linked so no code is shared between processes. On the other hand, the disadvantage of an additional dereference is relevant, so currently, it is not advantageous to use PIC on GPUs.
