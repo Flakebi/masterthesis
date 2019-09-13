@@ -1,11 +1,11 @@
 \newcommand\unuseddiag[2]{
 \begin{figure}
-\pgfplotsset{width=\textwidth}
+\pgfplotsset{width=\textwidth-2cm}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
 	ybar,
-	xlabel={\#BBs in a Shader},
+	xlabel={\#BBs in a Shader of #2},
 	ylabel={Unused BBs [\SI{}{\percent}]},
 	xmin=0,
 	xmax=\runtex{max-bbs -g #1},

@@ -1,16 +1,21 @@
 \clearpage
 \bigsection{Evaluation}
 To evaluate our work, we run our analyses on various applications and also run benchmarks comparing the performance with and without profile-guided optimizations.
-We modified the Vulkan driver to enable PGO so we need Vulkan applications for benchmarks.
+We modified the Vulkan driver to enable PGO, so we need Vulkan applications for our benchmarks.
 We picked the following five games which have in common that they use the Vulkan API on Linux, and they have a benchmark which can be executed automatically and collects performance data in a machine-readable form:
 Ashes of the Singularity which is abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we shorten to Warhammer.
-There are similar games, which we tried but failed because of various problems like the game does not start at all under Linux.
-The games that we excluded are F1 2018, Serious Sam Fusion 2017 and Total War Saga: Thrones of Britannia, which was not even installable.
+There are similar games, which we tried to integrate into our evaluation.
+We were not able to include the games F1 2018, Serious Sam Fusion 2017 and Total War Saga: Thrones of Britannia into our evaluation because of various problems.
+Some of them are not running on Linux and one is not even installable.
 
-Another game focused application which we looked at is the Infiltrator Demo Project of the Unreal Engine~\cite{Games2015}.
+Another gaming focused application which we looked at is the Infiltrator Demo Project of the Unreal Engine~\cite{Games2015}.
 This is not a playable game, but a demo scene which plays when the application starts and which showcases the game engine.
 Also, it does not measure the performance, so we did not use it to test the performance of PGO, but we measured the number of needed registers.
-Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we describe further in \cref{sub:eval_unused}. We call this program switch vm.
+Another non-game application which we used for evaluation purpose is a small switch-case bytecode interpreter that we describe further in \cref{sub:eval_unused}. We call this program \emph{switch vm}.
+
+For all these applications, we use a benchmark scene from the game.
+We use the same or similar options as Phoronix Test Suite~\cite{Phoronix}, this means the in-game benchmarks for Ashes, F1 2017, Mad Max and Warhammer and a tournament scene for Dota 2.
+For Unreal Infiltrator and the switch vm, we use the application itself as the benchmark.
 
 The hardware for our benchmarks consists of a Intel i7-5820K @ \SI{3.30}{\giga\hertz} processor and an AMD Radeon RX 480 GPU with \SI{8}{\giga\byte} of GPU memory.
 To make the benchmarks more reproducible, the GPU used the \texttt{profile\_standard} performance mode, which means it runs with a fixed frequency.
@@ -27,7 +32,7 @@ An application like a game uses a lot of shaders, Ashes has 250 different shader
 Warhammer uses the least amount with 225 shaders while F1 2017 needs the most with 3220.
 These numbers do not necessarily represent the total number of shaders in the games, but only the amount of shaders that are compiled for the benchmark scene.
 A difference here is that Ashes compiles most of its shaders at the start of the game while Dota compiles shaders lazily when they are needed, so we only see a fraction of the shaders that Dota contains, but we see a greater fraction of the shaders in Ashes.
-When evaluating basic block counters, unused code, and uniformity, we only consider shaders that were run at least once.
+When evaluating basic block counters, unused code, and uniformity, we only consider shaders that were run at least once in the benchmark.
 For the register usage, we collect the statistics overall compiled shaders without taking into account if they were executed or not.
 
 \subsection{Basic Block Counters}
@@ -99,7 +104,7 @@ This leaves us with the compare instructions from the original binary jump tree 
 This improves the performance as shown in \cref{sub:eval_perf}.
 
 Apart from performance, we also want to analyze the register usage of shaders when removing unused blocks.
-This can help us to estimate gains of register spilling to reduce register pressure.
+This helps us to estimate gains of register spilling to reduce register pressure.
 When looking at registers, we have to differentiate between scalar and vector registers.
 Scalar registers are cheap in hardware compared to vector registers because only $\frac{1}{64}$ of them is needed.
 Hence, the hardware has more of them and the occupancy of shaders is mostly limited by vector registers.

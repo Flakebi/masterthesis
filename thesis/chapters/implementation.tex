@@ -1,9 +1,9 @@
 \clearpage
 \bigsection{Implementation}
-The implementation happens in several steps of the workflow and touches multiple parts of the AMDVLK driver.
+Our implementation happens in several steps of the PGO workflow and touches multiple parts of the AMDVLK driver.
 First, the LLVM compiler inserts instrumentation instructions.
 LLVM can already emit instrumentation instructions for counting basic blocks and it can be activated with a few lines of code in \acrfull{llpc}.
-The next step is loading the compiled binary onto the GPU. Therefore, code in PAL needs to be adjusted as summarized in \cref{sub:loading}.
+The next step is loading the compiled binary onto the GPU. Therefore, code in the \acrfull{pal} needs to be adjusted as summarized in \cref{sub:loading}.
 After loading a shader, it is run. This part is unmodified by our work.
 Then, when a shader pipeline is destroyed again, the driver fetches the collected information and writes them to disk as explained in detail in \cref{sub:save}.
 The next compilation of a profiled shader can then incorporate the collected information, which is described in \cref{sub:load}. All of this gives us the possibility to use the basic block counters for PGO.
@@ -13,7 +13,7 @@ The more advanced analyses and implementations reuse this infrastructure and ext
 \subsection{Workflow}
 \label{sub:impl_workflow}
 As described in the design \cref{sub:workflow}, options are passed to the driver through environment variables.
-The concrete steps then are like the following:
+The concrete steps are:
 \begin{enumerate}
 	\item Set \texttt{AMDVLK\_PROFILE\_INSTR\_GEN} and other variables to a profile file path
 	\item Run the application $n$ times which produces an output file on each run
@@ -132,7 +132,7 @@ To fix this bug, we marked the \texttt{export} intrinsic as \emph{convergent} wh
 \label{sub:bbcounters}
 Counting executions of basic blocks is implemented in three different LLVM passes.
 The pass \texttt{PGOInstrumentationGen} inserts increment intrinsics into some basic blocks.
-On the other side, \texttt{PGOInstrumentationUse} loads a \texttt{.profdata} file, reads the counters and sets the block frequency data.
+After collecting data, \texttt{PGOInstrumentationUse} loads a \texttt{.profdata} file, reads the counters and sets the block frequency data.
 Creating the counter data sections, storing the metadata and emitting the actual add instructions happens in the \texttt{InstrProfiling} pass.
 This pass iterates over all counter intrinsics from the \texttt{PGOInstrumentationGen} pass and replaces them by add instructions.
 

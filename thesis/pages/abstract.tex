@@ -10,12 +10,12 @@ If real runtime information is provided to the compiler, it can optimize better 
 
 On CPUs, collecting runtime data and providing it to the compiler is called profile-guided optimizations (PGO).
 These optimizations are common on CPUs, but they do not yet exist for GPU programs.
-While there exist many tools that assist with profiling on GPUs, very few of them provide insight into what happens inside a shader.
+While many tools that assist with profiling on GPUs exist, very few of them provide insight into what happens inside a shader.
 
-This work leverages profile-guided optimizations on GPUs with a focus on collecting profiling information.
+This work introduces profile-guided optimizations on GPUs with a focus on collecting profiling information.
 
-As a first part, the basic block counters from LLVM are adjusted to work with GPUs.
-They indicate if there exist basic blocks that are never executed.
+As a first part, the basic block counters from LLVM are adjusted to support GPUs.
+They indicate if basic blocks are executed at all.
 Up to \SI{30}{\percent} of blocks are unused in some games and can be removed by the compiler for testing purposes.
 Analyzing the number of allocated registers shows that removing unused code does not have a great effect on register usage.
 
@@ -26,7 +26,7 @@ The overhead of counter instrumentation ranges from \SI{0}{\percent} to \SI{43}{
 
 Apart from execution counters, uniformity of branches and variables is an interesting property on graphics cards.
 We implement LLVM passes to log the uniformity of branches and variables.
-The collected data about uniform variables and register usage is shown in multiple diagrams, visualizing the runtime behavior of shaders.
+This work shows the collected data about uniform variables and register usage in multiple diagrams, visualizing the runtime behavior of shaders.
 
 %\pagenumbering{arabic}\setcounter{page}{1}
 %\begin{abstract}

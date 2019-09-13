@@ -4,11 +4,15 @@
 \begin{tikzpicture}
 \begin{axis}[
 	xlabel={Occupancy PGO},
-	ylabel={\footnotesize Occupancy PGO with removed blocks, more is better {\color{tumblue}$\blacktriangleright$}},
+	ylabel={Occupancy PGO with removed blocks\\more is better {\color{tumblue}$\blacktriangleright$}},
+	ylabel style={align=center},
 	point meta min=0,
 	grid=both,
 	enlargelimits=false,
 	colorbar,
+	colorbar style={
+		ylabel={\#Shaders},
+	},
 	nodes near coords={\pgfmathprintnumber\pgfplotspointmeta},
 	node near coords style={
 		/utils/exec={\setbox0\hbox{\pgfmathprintnumber\pgfplotspointmeta}

@@ -1,6 +1,6 @@
 \begin{figure}
 \centering
-\pgfplotsset{width=\textwidth}
+\pgfplotsset{width=\textwidth-0.4cm}
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -10,7 +10,8 @@
 	symbolic x coords={ashes,dota,dow3,f12017,madmax},
 	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
 	xtick=data,
-	ylabel={\footnotesize {\color{tumblue}$\blacktriangleleft$} Time per frame [\SI{}{\milli\second}], less is better},
+	ylabel={Time per frame [\SI{}{\milli\second}]\\{\color{tumblue}$\blacktriangleleft$} less is better},
+	ylabel style={align=center},
 	ymin=0,
 	grid=both,
 	%nodes near coords,
