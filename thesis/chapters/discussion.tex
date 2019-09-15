@@ -15,7 +15,7 @@ Before structurization, it is impossible to run through both branches of an if-e
 After the CFG is structurized, it is still impossible \emph{per lane}, but it is possible from the \emph{per unit} perspective.
 If executions are counted per lane, instrumenting before or after structurization does not make a semantic difference.
 After \texttt{StructurizeCFG}, more counters are needed, because there are more basic blocks and LLVM does not know anymore that only one block of an if-else construct will be entered.
-On the other hand, if executions are counted per unit, it does make a difference. More importantly, counting executions per unit before the CFG gets structurized leads to wrong results as LLVM expects than an else-block will not be entered if the if-block is executed. And this assumption is false for the per unit point of view.
+On the other hand, if executions are counted per unit, it does make a difference. More importantly, counting executions per unit before the CFG gets structurized leads to wrong results as LLVM expects that an else-block will not be entered if the if-block is executed. And this assumption is false for the per unit point of view.
 
 Summarizing, there are two different possibilities for instrumentation. First, counting per lane, where the instrumentation should be done before structurization because it leads to fewer counters and makes no difference otherwise.
 And second, counting per SIMD unit after structurization.
@@ -56,7 +56,7 @@ This makes it harder to find a suited benchmark for collecting runtime informati
 A developer always has to take into account that it will take a multiple of the time to emulate the benchmark on the CPU than to run it on the GPU.
 The collected information, however, have high quality and once an emulator is working it is easy to collect all kinds of information.
 
-Tools that collect detailed information about the execution of shaders exist for example for Arm GPUs~\cite{Barton2013}.
+Tools that collect detailed information about the execution of shaders without emulation exist for example for Arm GPUs~\cite{Barton2013}.
 In the high-performance computing space, Lynx~\cite{Lynx} is used to instrument CUDA applications and automatically measure performance statistics~\cite{Farooqui2014}.
 An interesting work by \citet{Stephenson2015} makes it possible to insert instrumentation at any point into shader code.
 They use this to insert counters, analyze memory access patterns and even for value profiling.

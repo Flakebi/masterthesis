@@ -20,14 +20,15 @@ To keep the usage and implementation of options simple, we decided to use enviro
 
 \subsection{Optimizations}
 \label{sub:optimizations}
-The goal of this thesis is to build the instrumentation, which is used in the first step of the PGO workflow. The instrumentation collects information at runtime and is needed to perform optimizations afterward. Before we can start collecting data, we need to know which information is needed. Therefore, it is part of this thesis is to find out which information can enable optimizations and should be collected and also how they can be collected.
+The goal of this thesis is to build the instrumentation, which is used in the first step of the PGO workflow. The instrumentation collects information at runtime and is needed to perform optimizations afterward. Before we can start collecting data, we need to know which information is needed.
+Therefore, it is part of this thesis to find out which information can enable optimizations and should be collected and also how they can be collected.
 
 The needed data is defined by the optimizations we want to perform in step four. In the following, we list some possible optimizations and the respectively needed profiling data.
 The optimizations stem from various sources, e.g. PGO optimizations for CPUs~\cite{MicrosoftPgo} and optimizations tailored to GPUs, as there are some peculiarities that have to be taken into account.
 Some described optimizations are specific to the current architecture of GPUs and have no close counterpart on CPUs.
 
-\subsubsection{Improve linearization}
-\paragraph{Description} As described in the introduction, moving seldom taken branches after the return instruction improves performance.
+\subsubsection{Improve Linearization}
+\paragraph{Description} As described in the introduction, moving seldom taken branches out of the usual control-flow improves performance.
 \paragraph{Background} This optimization is implemented in LLVM~\cite{llvmLinearization}. To avoid generating worse code, it is only applied when profiling data is available or the compiler assigned a very high probability to the hot branch.
 \paragraph{Needed data} Branch probabilities
 \paragraph{Example}\ \\
@@ -91,14 +92,14 @@ endif:
 	\end{lstlisting}
 \end{minipage}
 
-\subsubsection{Improve register allocation and occupancy}
+\subsubsection{Improve Register Allocation and Occupancy}
 \paragraph{Description} The number of registers that a shader uses can limit the number of shaders that run on a single compute unit in \gls{smt} fashion.
 If a single instance of a shader needs many registers, it prevents multiple instances of them running on the same SIMD unit because the register memory is not large enough to hold the registers for more instances at the same time.
 Therefore, reducing the registers that a shader needs or spilling registers which are rarely needed into memory can improve performance. However, registers in the hot path should not be spilled, as this will degrade performance.
 Branch probabilities can provide the information, where the register allocator can spill registers and where not.
 \paragraph{Background} Deciding spilled registers based on profiling information is already done for CPUs~\cite{Bakhvalov2019}. A difference is that on CPUs, the amount of registers is not dynamic but static. So storing variables in memory instead of registers to use fewer registers would never result in a performance gain.
 \paragraph{Needed data} Branch probabilities
-\paragraph{Example} For example, a game that has a single shader for most of the objects that get drawn. This shader implements all material properties though not all properties are active for each object.
+\paragraph{Example} For example, a game has a single shader for most of the objects that get drawn. This shader implements all material properties though not all properties are active for each object.
 One of the effects --- e.g. subsurface scattering --- needs a lot of registers but is enabled for few objects only. The high maximum number of used registers forces a low occupancy.
 In this case, spilling registers in the subsurface scattering implementation leads to lower register usage, higher occupancy and improves the performance.
 
@@ -132,7 +133,7 @@ endif:
 
 \subsubsection{Detect Uniform Computations}
 \paragraph{Description} If the shader does a computation or memory fetch on the same values for every lane on a SIMD unit, it is uniform. Uniform code can be optimized to be executed only once by the scalar unit instead of the vector unit.
-\paragraph{Background} This is similar to value profiling but specialized to GPUs. However, it does not consider isolated executions of a program. Instead, the instrumentation needs to inspect if values are different across one parallel execution. Compared to value profiling, the actually used values are not interesting, only if a value is uniform or not has to be saved. Using scalar instructions for uniform variables yields great benefits as described in a paper by \citet{Chen2016}.
+\paragraph{Background} This is similar to value profiling but specialized to GPUs. It does not consider isolated executions of a program. Instead, the instrumentation needs to inspect if values are different across one parallel execution. Compared to value profiling, the actually used values are not interesting, only if a value is uniform or not has to be saved. Using scalar instructions for uniform variables yields great benefits as described in a paper by \citet{Chen2016}.
 \paragraph{Needed data} Uniformity of variables on a SIMD unit
 \paragraph{Example} If a shader loads an element from a uniform buffer, and the compiler knows through instrumentation that the offset into the uniform buffer is usually the same on all SIMD lanes, it can optimize that load.
 The compiler can insert a branch that checks if the offset is uniform at runtime. If it is uniform, the scalar unit loads the element from the uniform buffer.
@@ -161,12 +162,12 @@ If the offset is not uniform at runtime, the shader falls back to the original, 
 %	\end{lstlisting}
 %\end{minipage}
 
-\subsubsection{Skip branches}
+\subsubsection{Skip Branches}
 \paragraph{Description} If the compiler encounters a non-uniform branch, it inserts code to set the EXEC mask and a jump which skips the branch on the SIMD unit if no lane wants to execute it. If the compiler knows that the branch will be executed (almost) always, it can omit the skip-jump and save a few instructions.
 \paragraph{Background} This optimization is an example that has no counterpart for CPUs.
 CPUs cannot run SIMD instructions only on a part of the lanes.
 This is a special case of detecting uniform computations where we are interested in the uniformity of the branch-condition.
-\paragraph{Needed data} Branch probabilities and distribution on a SIMD unit
+\paragraph{Needed data} Branch probabilities and uniformity on a SIMD unit
 \paragraph{Example} This optimization saves only a few instructions. An example where this can be useful nonetheless is in a hot loop where optimizing away a single instruction has a measurable impact.
 
 \subsection{Storing Data}
@@ -196,7 +197,7 @@ After the optimizations, the \gls{cfg} changes one more time on GPUs using the \
 The counter instrumentation can be added either before the CFG structurization or afterward.
 A detailed comparison of both options can be found in \cref{sub:discussion_structurize}. For this work, we implemented and compare both methods.
 
-After capturing counters, the next task is to use them. As LLVM is already using basic block counters for linearization if they are available, thus an optimized linearization is a low-hanging fruit.
+After capturing counters, the next task is to use them. As LLVM is already using basic block counters for linearization if they are available, an optimized linearization is a low-hanging fruit.
 
 \subsection{Removing Unused Code}
 \label{sub:design_unused}

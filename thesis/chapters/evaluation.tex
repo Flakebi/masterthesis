@@ -2,8 +2,14 @@
 \bigsection{Evaluation}
 To evaluate our work, we run our analyses on various applications and also run benchmarks comparing the performance with and without profile-guided optimizations.
 We modified the Vulkan driver to enable PGO, so we need Vulkan applications for our benchmarks.
-We picked the following five games which have in common that they use the Vulkan API on Linux, and they have a benchmark which can be executed automatically and collects performance data in a machine-readable form:
-Ashes of the Singularity which is abbreviate as \emph{Ashes} in the following, Dota 2, F1 2017, Mad Max and Warhammer 40,000: Dawn of War III which we shorten to Warhammer.
+We picked the following five games which have in common that they use the Vulkan API on Linux, and they have a benchmark which can be executed automatically and which collects performance data in a machine-readable form:
+\begin{itemize}
+	\item Ashes of the Singularity, which is abbreviated as \emph{Ashes} in the following
+	\item Dota 2
+	\item F1 2017
+	\item Mad Max
+	\item Warhammer 40,000: Dawn of War III, which we shorten to \emph{Warhammer}
+\end{itemize}
 There are similar games, which we tried to integrate into our evaluation.
 We were not able to include the games F1 2018, Serious Sam Fusion 2017 and Total War Saga: Thrones of Britannia into our evaluation because of various problems.
 Some of them are not running on Linux and one is not even installable.
@@ -18,10 +24,10 @@ We use the same or similar options as Phoronix Test Suite~\cite{Phoronix}, this 
 For Unreal Infiltrator and the switch vm, we use the application itself as the benchmark.
 
 The hardware for our benchmarks consists of a Intel i7-5820K @ \SI{3.30}{\giga\hertz} processor and an AMD Radeon RX 480 GPU with \SI{8}{\giga\byte} of GPU memory.
-To make the benchmarks more reproducible, the GPU used the \texttt{profile\_standard} performance mode, which means it runs with a fixed frequency.
+To make the benchmarks more reproducible, the GPU used the \texttt{profile\_standard} performance mode, which means it runs at a fixed frequency.
 The CPU used the performance frequency governor and turbo was switched off for benchmarks.
 The benchmarks are run in full HD resolution, so $1920 \times 1080 = 2\,073\,600$~pixel.
-In total, more than $6 \frac{1}{2}\;\si{h}$ was spent running benchmarks.
+In total, more than $6 \frac{1}{2}\;\si{h}$ was spent benchmarking.
 
 The performance numbers are expressed as frame times, i.e. how long does it take to compute a single frame.
 For example, a frame time of \SI{16.6}{\milli\second} corresponds to 60 frames per second.
@@ -39,7 +45,7 @@ For the register usage, we collect the statistics overall compiled shaders witho
 \label{sub:eval_counters}
 Shaders are small programs compared to CPU programs, more like a single function.
 This means the number of basic blocks in a shader is low, usually around 20 or lower.
-After instrumenting shaders and running a benchmark, the compiler can associate a counter with each basic block is.
+After instrumenting shaders and running a benchmark, the compiler can associate a counter with each basic block.
 
 A performance comparison using the default optimizations in LLVM that rely on PGO data is discussed in \cref{sub:eval_perf}.
 When instrumenting before the \texttt{StructurizeCFG} pass, an effect of PGO is that most pixel shaders are marked as hot functions while vertex shaders are often marked as unlikely.
@@ -161,8 +167,8 @@ Our instrumentation records the behavior at runtime and classifies a variable as
 
 \input{figures/uniform-branches.tex}
 
-\Cref{dia:uniform_branches} shows how conditions and branches are divided into three categories.
-The \enquote{best} category is the static uniform branches.
+\Cref{dia:uniform_branches} shows how conditions and branches are divided into the three categories.
+The \enquote{best} category are static uniform branches.
 For these branches, the compiler can emit a simple branch instruction and the compiler knows that either all or none of the active lanes will take this branch.
 Conditions in the dynamic uniform category represent a branch where the compiler emitted additional code to support divergent branching.
 At runtime, this code is not used, the branch is always taken by all lanes uniformly.
@@ -201,7 +207,8 @@ Using this information for further optimizations is left for future work.
 \label{sub:eval_perf}
 In addition to the previous analyses, an important part is the performance change when using profile-guided optimizations.
 To evaluate the performance of shaders, we run the games in three different configurations: Without any special options, using profile-guided optimizations and using PGO with removing unused basic blocks.
-As before, removing blocks is only done for Dota 2, Mad Max and the switch vm, the other games are not working with the current implementation.
+As before, removing blocks is only done for Ashes, Dota 2, Mad Max and the switch vm, the other games are not working with the current implementation.
+All games were run three times in each configuration.
 \input{figures/performance.tex}
 
 \begin{table}
@@ -220,7 +227,7 @@ The switch vm shows big improvements. When using PGO, it gets faster by \SI{7.34
 When additionally removing unused blocks, it gets even faster by \SI{21.06 \pm 0.10}{\percent}.
 
 The order of basic blocks and other optimizations based on basic block counter seem to have a minor effect on the performance of games.
-Removing unused blocks did not affect the two tested games.
+Removing unused blocks did not affect the tested games.
 On the switch vm however, PGO as well as removing basic blocks had a remarkable effect.
 
 \subsection{Overhead}
@@ -262,11 +269,11 @@ This is enough to let e.g. the Infiltrator demo start.
 All our benchmarks used this technique.
 
 Another overhead reduction can be achieved by skipping counting on most SIMD units and activate it e.g. only on \SI{5}{\percent} of the units.
-This means most executions will skip the increments, having even less overhead than the non-atomic variant while the rest of the executions gives accurate statistics.
+This means most executions will skip the increments, having less overhead while the rest of the executions give accurate statistics.
 A problem with this approach is that (e.g. vertex-) shaders that get executed only a few times, might not land on any of SIMD units where counting is activated and no statistics at all are collected for them.
 This should only be a small problem because these shaders probably do not account for much of the computation time (as they are executed only a few times) and optimizing them cannot yield big benefits anyway.
 
-A more sophisticated technique that can speed up basic block counting tries to reduce the memory pressure by atomics without falling back to non-atomic counting.
+A more sophisticated technique that can speed up basic block counting tries to reduce the memory pressure by atomics.
 As we know, many atomic operations will simultaneously try to access the same memory location.
 We can reduce this pressure if multiple memory locations in different cache lanes are used for the same counter and they spread the counting over these locations.
 As fewer atomic increments access the same memory, they do not have to wait as long as before and the program execution can continue faster.

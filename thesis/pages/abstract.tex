@@ -6,7 +6,7 @@
 Today, GPUs are getting used in various fields for an increasing number of diverse purposes.
 One of the parts which enable this development are compilers, but so far, the compilers for GPUs have a shortcoming when it comes to optimizations.
 At many points, a compiler uses heuristics to guess how code will behave at runtime.
-If real runtime information is provided to the compiler, it can optimize better and more aggressively as the chance of a misjudgment are lower.
+If real runtime information is provided to the compiler, it can optimize better and more aggressively as the chance of a misjudgment is lower.
 
 On CPUs, collecting runtime data and providing it to the compiler is called profile-guided optimizations (PGO).
 These optimizations are common on CPUs, but they do not yet exist for GPU programs.
@@ -16,7 +16,7 @@ This work introduces profile-guided optimizations on GPUs with a focus on collec
 
 As a first part, the basic block counters from LLVM are adjusted to support GPUs.
 They indicate if basic blocks are executed at all.
-Up to \SI{30}{\percent} of blocks are unused in some games and can be removed by the compiler for testing purposes.
+Up to \SI{30}{\percent} of blocks are unused in tested games and can be removed by the compiler for testing purposes.
 Analyzing the number of allocated registers shows that removing unused code does not have a great effect on register usage.
 
 We test five games with LLVM's PGO with basic block counters, leading to performance changes of at most \SI{1}{\percent}.

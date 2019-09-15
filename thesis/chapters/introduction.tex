@@ -14,7 +14,7 @@ At the same time, vertex processing was moved to the GPU and made programmable u
 The overall computational power of GPUs increased substantially by providing increasing memory bandwidth and by instantiating numerous processing units operating in parallel.
 This computational power combined with their ubiquity made GPUs attractive for applications outside of real-time rendering.~\cite{McClanahan2010}
 
-While this \gls{gpgpu} usage was not the primary purpose of shaders, multiple APIs and libraries came up to provide good support using GPUs for different purposes.
+While this \gls{gpgpu} usage was not the primary purpose of shaders, multiple APIs and libraries emerged to provide good support using GPUs for different purposes.
 GPUs soon gained the ability to run compute shaders (also called compute kernels) outside the graphics pipeline, but using the same general-purpose processing units.
 Nowadays, the computing power of GPUs stems from their large amount of general-purpose arithmetical processing units and the parallel computing power is used for games, high performance computing and even tasks like offloading computations from spreadsheets or databases~\cite{Lillqvist2016, Meraji2015}.
 
@@ -24,7 +24,7 @@ The time when optimizations happen differs depending on the used programming lan
 E.g. C++ code is optimized ahead of runtime when compiling code. On the other hand, scripting languages like JavaScript or bytecode languages like Java and C\texttt{\#} are optimized at runtime by a \gls{jit}.
 On a GPU, code is compiled ahead of runtime, similar to C++. The compiled code is then copied over the \gls{pciebus} to the GPU and executed.
 
-For ahead-of-time compiled programming languages, optimizations are generally based on static analyses of code. For example, constant propagation can be implemented by first analyzing the possible values of variables using a fixed point iteration over the \gls{cfg} and afterward transforming the \gls{cfg} such that known variable values are used.~\cite{Seidl2010}
+For ahead-of-time compiled programming languages, optimizations are generally based on static analyses of code. For example, constant propagation can be implemented by first analyzing the possible values of variables using a fixed point iteration over the \gls{cfg} and afterward transforming the \gls{cfg} such that known variable values are used~\cite{Seidl2010}.
 
 Another possible optimization is the decision where to place code in a resulting executable.
 It is beneficial for performance if seldom executed instructions are put outside of the usual control-flow.
@@ -56,10 +56,11 @@ This optimization can yield performance improvements of more than \SI{10}{\perce
 For clang there is also a second option available. Instead of using instrumentation to capture runtime information, it can also use data collected by standard profiling tools like the Linux \texttt{perf} program~\cite{LinuxPerf}. Profilers like \texttt{perf} generally incur a lower runtime overhead compared to instrumentation. The downside is that the resulting information is less detailed~\cite{ClangManual}.
 
 The usage example in \cref{lst:compile-pgo} shows that using \gls{pgo} today is well-supported by popular tools and easy to use for developers.
-In the first part of this introduction, we looked at the evolution of GPUs and how they became highly parallel, general-purpose. Profile-guided optimizations however are not yet supported for GPU code. The problem is the lack of tools for profiling or instrumentation of shaders.
+In the first part of this introduction, we looked at the evolution of GPUs and how they became highly parallel, general-purpose processors.
+Profile-guided optimizations however are not yet supported for GPU code. The problem is the lack of tools for profiling or instrumentation of shaders.
 
 \paragraph{GPU Profiling} There exist many analysis tools to analyze shader performance~\cite{RenderDoc, NvidiaShaderPerf}. They give information about how long a shader needs to execute or how much of the memory bandwidth it uses. But almost all of them stop at this level and are not able to give instruction-level insights into the performance of shader code like where it spends the most time, which branches are taken, how long different memory fetches take, etc.
-There exist static analysis tools that approximate this information~\cite{AMDShaderAnalyzer}. However, as seen before with the comparison of ahead-of-time and \glspl{jit} compilers, the knowledge of concrete input data enables some optimizations that are otherwise impossible.
+There exist static analysis tools that approximate this information~\cite{AMDShaderAnalyzer}. However, as seen before with the comparison of ahead-of-time and \gls{jit} compilers, the knowledge of concrete input data enables some optimizations that are otherwise impossible.
 
 Before we can start to implement more sophisticated optimizations in the compiler that rely on profiling data, detailed profiling information are needed.
 The focus of this thesis is to collect the necessary runtime information of GPU code, to use it for PGO. In the workflow of PGO, this is part of step one, namely inserting instrumentation when compiling code for the first time% in forever
@@ -73,7 +74,7 @@ Throughout this paper, we use the term \emph{SIMD lane} for a single work-item.
 For a group of work-items that are run on the same SIMD unit, we use the expression \emph{SIMD unit}.
 AMD refers to this group of items as wavefront while NVIDIA uses warp.
 
-Concerning profile-guided optimizations, a \emph{benchmark} is used to label an automated, scripted execution of an application that is used to gather profiling data.
+Concerning profile-guided optimizations, the term \emph{benchmark} labels an automated, scripted execution of an application that is used to gather profiling data.
 
 % We use the term \gls{cu} used by OpenCL and AMD, called \gls{sm} by NVIDIA.
 % https://community.khronos.org/t/relation-between-cuda-cores-and-compute-units/4772/2
@@ -81,12 +82,12 @@ Concerning profile-guided optimizations, a \emph{benchmark} is used to label an 
 \subsection{Contributions}
 \label{sub:contributions}
 This work contributes several instrumentations for Vulkan on AMD GPUs in the AMDVLK driver.
-We use these instrumentations on popular games and evaluate the collected data.
+We use these instrumentations on popular games and analyze the collected data.
 Using this data, we evaluate some possible, profile-guided optimizations on these games.
 
 The first instrumentation inserts counters at \glspl{bb}\footnote{See \cref{sub:counter-instrumentation} for an explanation of basic blocks} which gives us information about how often each \gls{bb} is executed.
 This allows the compiler to detect hot paths in shaders and optimize them more aggressively.
-We measure and evaluate the effect of optimizations in LLVM when accurate BB counts are available.
+We measure and evaluate the effect of optimizations in LLVM when accurate BB execution counts are available.
 
 Accurate counters also allow detecting unused basic blocks that are never executed in the selected benchmarks. We test the impact of removing this code and check if PGO and unused code affect the register allocation of shaders.
 
