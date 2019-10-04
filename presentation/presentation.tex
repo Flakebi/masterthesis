@@ -1,0 +1,96 @@
+\documentclass[xcolor={usenames,dvipsnames}, aspectratio=169, 12pt]{beamer}
+\usetheme{tum}
+
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{emojione}
+\usepackage{wasysym}
+\usepackage{calc}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc, fadings, fit, arrows.meta}
+\usepackage{listings}
+\usepackage{luacode}
+\usepackage{pgfplots}
+\usepackage[separate-uncertainty=true]{siunitx}
+\usepackage{svg}
+
+\input{settings.tex}
+
+% META
+% =========================================================
+\title[Master Thesis]{Profile-Guided Optimizations for GPUs}
+%\subtitle{}
+\author[S. Neubauer]{Sebastian Neubauer}
+\date{October 10, 2019}
+% Drop the following 2 lines if your title page is too full
+\institute{Technische Universität München}
+%\semester{SS 2017}
+
+% =========================================================
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\section{Introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Problem}
+\large Compiler has to guess what happens at runtime
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Solution}{Profile-Guided Optimizations}
+\centering
+\input{figures/steps.tex}
+\end{frame}
+
+\section{Uniformity}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{GPUs}{Hardware}
+\begin{center}
+\input{figures/gpu-simd-condition.tex}
+\end{center}
+
+\visible<2->{\lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/example.frag}}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{GPUs}{Software}
+Code
+\end{frame}
+
+\section{Summary}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{What else?}
+\begin{itemize}
+	\item Implement PGO for GPUs
+	\item ELF-Loader
+	\item Fix bugs
+	\item Remove unused shader code
+	\item Statistics about counters, unused code, register usage and uniformity
+	\item Benchmarks of optimizations and instrumentation overhead
+	\item Benchmarks of instrumentation overhead
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{\framelogo{\centering\includesvg[width=2cm]{clipart/RacingFlag.svg}}
+\begin{frame}{Performance}
+\input{figures/performance.tex}
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{tumplainframe}{Thanks!}
+\begin{center}
+	\Huge Questions?
+\end{center}
+\end{tumplainframe}
+
+% TODO Backup: Unused code statistic
+
+\end{document}

@@ -1,0 +1,59 @@
+\scalebox{0.6}{
+\begin{tikzpicture}
+	\tikzstyle{simdbox}=[minimum height = 1cm, minimum width = 0.68cm,right=10mm, rectangle, draw=black, fill=color0]
+	\tikzstyle{simdboxfade}=[simdbox, fill=color0!60!white, scope fading=south]
+	\tikzstyle{simdboxdisa}=[simdbox, fill=white!80!black]
+	\tikzstyle{simdboxdisafade}=[simdboxfade, fill=white!80!black]
+
+	\foreach \x in {0,...,3}{
+		\foreach \y in {0,...,2}{
+			\node[simdbox] at (0.75cm * \x, 0.5cm - 1cm * \y) {};
+		}
+		\node[simdboxfade] at (0.75cm * \x, 0.5cm - 1cm * 3) {};
+	}
+
+	%\node[simdbox] at (0.75cm * 0, -0.5cm) {};
+	%\node[simdbox] at (0.75cm * 1, -0.5cm) {};
+	\foreach \x in {0,...,3}{
+		%\node[simdbox, minimum height=0.5cm] at (0.75cm * \x, -1.25cm) {};
+	}
+
+	%\node[simdbox] at (0.75cm * 2, -2cm) {};
+	%\node[simdbox] at (0.75cm * 3, -2cm) {};
+	\foreach \x in {0,...,3}{
+		%\node[simdbox] at (0.75cm * \x, -3cm) {};
+	}
+
+	\node[right=10mm] (description) at (0.2cm, 2.2cm) {\Large SIMD Unit};
+	\node[right=10mm] (description) at (0.3cm, 1.3cm) {32/64 Lanes};
+	\node[right=10mm] (cycle-description) at (-0.7cm, -3.5cm) {t};
+
+	\foreach \x in {0,...,9}{
+		%\node (cycle\x) at (0.5cm, 1cm - 0.5cm * \x) {\x};
+		%\draw[dashed, opacity=0.5] (cycle\x) -- ++(3.75cm, 0cm);
+	}
+
+	\draw[->] (0.8cm, 1cm) -- ++(0cm, -0.25cm - 9 * 0.5cm);
+
+	\visible<2->{
+		\node at (5cm, 2cm) {};
+	}
+	
+	\visible<3->{
+		\node[simdboxdisa] at (0.75cm * 1, 0.5cm - 1cm * 1) {};
+		\node[simdboxdisa] at (0.75cm * 3, 0.5cm - 1cm * 1) {};
+
+		\node[simdboxdisa] at (0.75cm * 0, 0.5cm - 1cm * 2) {};
+		\node[simdboxdisa] at (0.75cm * 2, 0.5cm - 1cm * 2) {};
+	}
+
+	\visible<4->{
+		\node[right=10mm] (description) at (-3cm, 2.2cm) {\Large Scalar Unit};
+		\foreach \y in {0,...,2}{
+			\node[simdbox] at (-2cm, 0.5cm - 1cm * \y) {};
+		}
+		\node[simdboxfade] at (-2cm, 0.5cm - 1cm * 3) {};
+	}
+
+\end{tikzpicture}
+}
