@@ -12,26 +12,9 @@
 		\node[simdboxfade] at (0.75cm * \x, 0.5cm - 1cm * 3) {};
 	}
 
-	%\node[simdbox] at (0.75cm * 0, -0.5cm) {};
-	%\node[simdbox] at (0.75cm * 1, -0.5cm) {};
-	\foreach \x in {0,...,3}{
-		%\node[simdbox, minimum height=0.5cm] at (0.75cm * \x, -1.25cm) {};
-	}
-
-	%\node[simdbox] at (0.75cm * 2, -2cm) {};
-	%\node[simdbox] at (0.75cm * 3, -2cm) {};
-	\foreach \x in {0,...,3}{
-		%\node[simdbox] at (0.75cm * \x, -3cm) {};
-	}
-
 	\node[right=10mm] (description) at (0.2cm, 2.2cm) {\Large SIMD Unit};
 	\node[right=10mm] (description) at (0.3cm, 1.3cm) {32/64 Lanes};
 	\node[right=10mm] (cycle-description) at (-0.7cm, -3.5cm) {t};
-
-	\foreach \x in {0,...,9}{
-		%\node (cycle\x) at (0.5cm, 1cm - 0.5cm * \x) {\x};
-		%\draw[dashed, opacity=0.5] (cycle\x) -- ++(3.75cm, 0cm);
-	}
 
 	\draw[->] (0.8cm, 1cm) -- ++(0cm, -0.25cm - 9 * 0.5cm);
 
@@ -54,6 +37,5 @@
 		}
 		\node[simdboxfade] at (-2cm, 0.5cm - 1cm * 3) {};
 	}
-
 \end{tikzpicture}
 }

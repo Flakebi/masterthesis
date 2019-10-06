@@ -305,6 +305,27 @@ def performance_tab(args, configs, legend):
 
 	print(r"\end{tabular}")
 
+def performance_presentation(args):
+	configs = ["", "use-wave-late"]
+	legend = ["Normal", "PGO"]
+	metas = [""] * 6 + ["+0.014%", "+0.1%", "-1%", "+0.68%", "-0.2%", "-7.34%"]
+	j = 0
+
+	for config in configs:
+		print(f"\\addplot+[point meta=explicit symbolic,error bars/.cd,y dir=both,y explicit] coordinates {{")
+		for game in sorted(games.keys()):
+			key = f"{game}-{config}"
+			if key in bench:
+				val = Value.avg([i * 1000 for i in bench[key]])
+				#meta = metas[j].replace("%", "\\pgfmathprintnumber\\pgfplotspointmeta\\%")
+				meta = metas[j].replace("%", "\\%")
+				print(f"({game},{val.val}) +- (0,{val.error}) [{meta}]")
+				j += 1
+
+		print("};")
+
+	print(f"\\legend{{{{{'},{'.join(legend)}}}}}")
+
 def registers_fun(args):
 	configs = ["", "use-wave-late", "use-wave-late-remove"]
 	legend = ["Normal", "PGO", "PGO + removing blocks"]
@@ -499,6 +520,7 @@ def main():
 		"max-bbs": max_bbs,
 		"unused-code-summary": unused_code_summary,
 		"performance": performance,
+		"performance-presentation": performance_presentation,
 		"registers": registers_fun,
 		"uniform-branches": uniform_branches,
 		"uniform-loads": uniform_loads,

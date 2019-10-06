@@ -60,7 +60,8 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[fragile]{GPUs}{Software}
-Code
+% TODO
+\lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/assembly.asm}
 \end{frame}
 
 \section{Summary}
@@ -73,7 +74,7 @@ Code
 	\item Fix bugs
 	\item Remove unused shader code
 	\item Statistics about counters, unused code, register usage and uniformity
-	\item Benchmarks of optimizations and instrumentation overhead
+	\item Benchmarks of optimizations
 	\item Benchmarks of instrumentation overhead
 \end{itemize}
 \end{frame}
@@ -84,6 +85,14 @@ Code
 \input{figures/performance.tex}
 \end{frame}}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Future Work}
+\begin{itemize}
+	\item Implement optimizations
+	\item More benchmarks
+\end{itemize}
+\end{frame}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{tumplainframe}{Thanks!}
 \begin{center}
@@ -91,6 +100,9 @@ Code
 \end{center}
 \end{tumplainframe}
 
-% TODO Backup: Unused code statistic
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Unused Code}
+	\input{figures/unused-by-game.tex}
+\end{frame}
 
 \end{document}

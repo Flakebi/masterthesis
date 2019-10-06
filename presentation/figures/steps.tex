@@ -1,23 +1,32 @@
 \begin{center}
 \begin{tikzpicture}
 	\tikzstyle{box}=[minimum height = 1cm, minimum width = 1.5cm, right=10mm, align=center, rectangle, draw=black]
+	\tikzstyle{boundingbox}=[draw=green, thick, rounded corners, inner sep=0.2cm]
+
 	\node[box] (compile) at (0cm, 0cm) {\scriptsize Compile};
 	\node[box, right=of compile] (run) {\scriptsize Profile};
 	\node[box, right=of run] (compile2) {\scriptsize Compile};
 	\node[box, right=of compile2] (run2) {\scriptsize Run};
 
-	\node[box, above=of compile] (code) {\scriptsize Code};
+	\node[above=of compile] (code) {\includesvg[height=1.2cm]{figures/file.svg}};
 	\node[above=0.1cm of code] {\scriptsize Code};
-	\node[box, below=of run] (data) {\scriptsize Data};
-	\node[below=0.1cm of data] {\scriptsize Data};
+	\node[below=of run] (data) {\includesvg[height=1.2cm]{figures/file.svg}};
+	\node[below=0.1cm of data] (datal) {\scriptsize Data};
 
 	\draw[->] (compile) -- (run);
 	\draw[->] (run) -- (compile2);
 	\draw[->] (compile2) -- (run2);
 	\draw[->] (code) -- (compile);
+	\draw[->] (code) -| (compile2);
 	\draw[->] (run) -- (data);
 	\draw[->] (data) -| (compile2);
 
 	\node[align=center, rotate=-30, text=color2, above right=0.5cm and -0.5cm of run2] (faster) {\footnotesize Faster! 🎉};
+
+	\visible<2->{
+		\node[boundingbox, fit=(run)(compile2)(datal)] (new) {};
+		\node[boundingbox, fit=(faster)] (new2) {};
+		\node[below left=-0.45cm and -1.9cm of new] (newl) {\scriptsize \textbf{Now possible}};
+	}
 \end{tikzpicture}
 \end{center}

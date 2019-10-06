@@ -1,4 +1,3 @@
-\pgfplotsset{height=8cm, every tick label/.append style={font=\scriptsize}}
 \begin{tikzpicture}
 \begin{axis}[
 	ybar,
@@ -16,8 +15,11 @@
 	%every node near coord/.append style={rotate=90, anchor=west},
 	bar width=0.3cm,
 	legend style={at={(1,1)},anchor=north east, font=\scriptsize},
+	point meta=explicit symbolic,
+	nodes near coords={\pgfplotspointmeta},
+	every node near coord/.append style={yshift=0.2cm, font=\scriptsize},
 ]
 
-\runtex{performance -d}
+\runtex{performance-presentation}
 \end{axis}
 \end{tikzpicture}
