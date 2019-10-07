@@ -308,7 +308,7 @@ def performance_tab(args, configs, legend):
 def performance_presentation(args):
 	configs = ["", "use-wave-late"]
 	legend = ["Normal", "PGO"]
-	metas = [""] * 6 + ["+0.014%", "+0.1%", "-1%", "+0.68%", "-0.2%", "-7.34%"]
+	metas = ["+0.014%", "+0.1%", "-1%", "+0.68%", "-0.2%", "-7.34%"] + [""] * 6
 	j = 0
 
 	for config in configs:

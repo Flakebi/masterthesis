@@ -64,6 +64,15 @@
 \lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/assembly.asm}
 \end{frame}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Measure Uniformity}
+Find out if \texttt{x} is uniform
+\begin{itemize}
+	\item \texttt{y = read\_first\_lane(x)}
+	\item % TODO
+\end{itemize}
+\end{frame}
+
 \section{Summary}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -71,7 +80,7 @@
 \begin{itemize}
 	\item Implement PGO for GPUs
 	\item ELF-Loader
-	\item Fix bugs
+	\item Fix bugs in AMD drivers
 	\item Remove unused shader code
 	\item Statistics about counters, unused code, register usage and uniformity
 	\item Benchmarks of optimizations
