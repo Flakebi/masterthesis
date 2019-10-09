@@ -1,0 +1,22 @@
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+	ybar,
+	enlarge x limits=0.2,
+	cycle list name=mycolors,
+	symbolic x coords={ashes,dota,dow3,f12017,madmax},
+	xticklabels={Ashes,Dota 2,Warhammer,F1 2017,Mad Max},
+	xtick=data,
+	ylabel={\small {\color{tumblue}$\blacktriangleleft$} less is better, Time per frame [\SI{}{\milli\second}]},
+	ylabel style={align=center},
+	ymin=0,
+	grid=both,
+	%nodes near coords,
+	%every node near coord/.append style={rotate=90, anchor=west},
+	bar width=0.3cm,
+	legend style={at={(0,1)},anchor=north west},
+]
+
+\runtex{overhead -d}
+\end{axis}
+\end{tikzpicture}

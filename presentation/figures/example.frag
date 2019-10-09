@@ -1,6 +1,11 @@
-{
-	if (pos.x < 0.5)
-		gl_out = vec3(1.0, 0.0, 0.0);
+void main() {
+	float a;
+	if (in_value < 0.5)
+		a = 2.0;
 	else
-		gl_out = vec3(0.0, 0.0, 1.0);
+		a = 0.0;
+
+	float r = a * 0.5;
+	float g = a * in_value;
+	out_color = vec3(r, g, 0.0);
 }

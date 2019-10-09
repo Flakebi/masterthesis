@@ -47,6 +47,11 @@
 \input{figures/steps.tex}
 \end{frame}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Solution}{Profile-Guided Optimizations}
+Collect data: Basic block counter, uniform branches, uniform variables
+\end{frame}
+
 \section{Uniformity}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -55,7 +60,7 @@
 \input{figures/gpu-simd-condition.tex}
 \end{center}
 
-\visible<2->{\lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/example.frag}}
+\visible<2->{\lstinputlisting[frame=tlrb,language=glsl]{figures/example.frag}}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -68,8 +73,10 @@
 \begin{frame}{Measure Uniformity}
 Find out if \texttt{x} is uniform
 \begin{itemize}
-	\item \texttt{y = read\_first\_lane(x)}
-	\item % TODO
+	\item \texttt{first = readfirstlane(x)}
+	\item \texttt{cmp\_mask = icmp(x != first)}
+	\item \texttt{is\_non\_uniform = cmp\_mask != 0}
+	\item \texttt{atomic\_add(<counter>, is\_non\_uniform)}
 \end{itemize}
 \end{frame}
 
@@ -110,8 +117,37 @@ Find out if \texttt{x} is uniform
 \end{tumplainframe}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Performance}
+\resizebox{\textwidth}{!}{
+\runtex{performance}
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Overhead}
+\input{figures/overhead.tex}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Overhead}
+\resizebox{\textwidth}{!}{
+	\runtex{overhead}
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{Unused Code}
 	\input{figures/unused-by-game.tex}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Uniform Branches}
+\input{figures/uniform-branches.tex}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Uniform Loads}
+\input{figures/uniform-loads.tex}
 \end{frame}
 
 \end{document}
