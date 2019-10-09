@@ -1,11 +1,13 @@
+layout(location = 0) in float in_value;
+layout(location = 1) out ivec3 out_color;
 void main() {
-	float a;
-	if (in_value < 0.5)
-		a = 2.0;
-	else
-		a = 0.0;
+    int a;
+    if (in_value < 0.5)
+        a = 2;
+    else
+        a = 0;
 
-	float r = a * 0.5;
-	float g = a * in_value;
-	out_color = vec3(r, g, 0.0);
+    int r = a * 3;
+    int g = a * int(in_value);
+    out_color = ivec3(r, g, 0);
 }

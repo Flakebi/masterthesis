@@ -4,6 +4,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
 \usepackage{amsmath}
+\usepackage{csquotes}
 \usepackage{emojione}
 \usepackage{wasysym}
 \usepackage{calc}
@@ -49,7 +50,20 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}{Solution}{Profile-Guided Optimizations}
-Collect data: Basic block counter, uniform branches, uniform variables
+Optimizations
+\begin{itemize}
+	\item Linearization
+	\item Register allocation
+	\item \enquote{Constant} propagation
+	\item Uniform optimizations
+\end{itemize}
+\vspace{0.5cm}
+Needed data
+\begin{itemize}
+	\item Branch probabilities
+	\item Variable values
+	\item Uniformity of variables
+\end{itemize}
 \end{frame}
 
 \section{Uniformity}
@@ -60,13 +74,21 @@ Collect data: Basic block counter, uniform branches, uniform variables
 \input{figures/gpu-simd-condition.tex}
 \end{center}
 
-\visible<2->{\lstinputlisting[frame=tlrb,language=glsl]{figures/example.frag}}
+\visible<2->{\lstinputlisting[frame=tlrb,style=glsl]{figures/example.frag}}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{frame}[fragile]{GPUs}{Software}
-% TODO
-\lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/assembly.asm}
+\begin{columns}
+	\begin{column}{0.5\textwidth}
+		\lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/assembly.asm}
+	\end{column}
+	\begin{column}{0.5\textwidth}%
+		\visible<2->{
+		\lstinputlisting[frame=tlrb,language={[amdgpu]Assembler}]{figures/assembly-scalar.asm}
+		}
+	\end{column}
+\end{columns}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
